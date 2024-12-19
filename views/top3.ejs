@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Top 3</title>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const checkboxes = document.querySelectorAll('input[name="traits"]');
+      const maxSelections = 3;
+      const selectedTraits = []; // Queue to store selected traits in time order
+
+      checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) {
+            selectedTraits.push(checkbox); // Add the checkbox to the queue
+
+            // If the queue exceeds maxSelections, remove the first (oldest) selected trait
+            if (selectedTraits.length > maxSelections) {
+              const oldestCheckbox = selectedTraits.shift(); // Remove the oldest
+              oldestCheckbox.checked = false; // Uncheck it
+            }
+          } else {
+            // Remove the unchecked checkbox from the queue
+            const index = selectedTraits.indexOf(checkbox);
+            if (index !== -1) {
+              selectedTraits.splice(index, 1);
+            }
+          }
+        });
+      });
+
+      // Save the top 3 traits when the user clicks "Next"
+      const form = document.querySelector("form");
+      form.addEventListener("submit", (e) => {
+        const selectedCheckboxes = selectedTraits.map((cb) => cb.value);
+
+        if (selectedCheckboxes.length !== maxSelections) {
+          e.preventDefault();
+          alert(`Please select exactly ${maxSelections} traits.`);
+          return;
+        }
+
+        // Save top 3 selections to localStorage
+        localStorage.setItem("top3", JSON.stringify(selectedCheckboxes));
+      });
+    });
+  </script>
+</head>
+<body>
+  <form action="/bottom3" method="GET">
+    <h3>Select Your Top 3 Traits:</h3>
+    <% characteristics.forEach((trait) => { %>
+      <label>
+        <input type="checkbox" name="traits" value="<%= trait %>" />
+        <%= trait %>
+      </label>
+    <% }) %>
+    <button type="submit">Next</button>
+  </form>
+</body>
+</html>

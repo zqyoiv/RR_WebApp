@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Name Page</title>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.querySelector("form");
+
+      form.addEventListener("submit", (e) => {
+        const name = document.querySelector('input[name="name"]').value;
+
+        if (!name.trim()) {
+          e.preventDefault();
+          alert("Please enter your name.");
+          return;
+        }
+
+        // Save name to localStorage
+        localStorage.setItem("userName", name.trim());
+      });
+    });
+  </script>
+</head>
+<body>
+  <form action="/top3" method="GET">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required />
+    <button type="submit">Next</button>
+  </form>
+</body>
+</html>

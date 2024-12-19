@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Result</title>
+</head>
+<body>
+  <div>
+    <h3>Hi <%= name %>, the Garden Wants To Ask You:</h3>
+    <p><%= text %></p>
+
+    <h3>Your Selections</h3>
+    <div>
+      <h4>Top 3 Traits:</h4>
+      <ul>
+        <% top3.forEach((trait) => { %>
+          <li><%= trait %></li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <div>
+      <h4>Bottom 3 Traits:</h4>
+      <ul>
+        <% bottom3.forEach((trait) => { %>
+          <li><%= trait %></li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
