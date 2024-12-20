@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const { OpenAI } = require("openai");
+const OSC = require('node-osc');
 const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
@@ -14,7 +15,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Start server
+// ------------------- OSC --------------------------
+// Create a new OSC client to send messages
+// Specify the server's IP address and the port number
+// Called when GPT result is back.
+const oscClient = new OSC.Client('127.0.0.1', 7000);
+
+// --------------- Start Server  ---------------------
 server.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
@@ -147,6 +154,7 @@ io.on("connection", (socket) => {
                 bottom3,
                 question
             });
+            sendResultToUEViaOSC(playerName, question);
             removeFromProcessingQueue(sessionId);
         } else { // Production mode.
             // Call generateInsightfulQuestion with a callback
@@ -164,6 +172,7 @@ io.on("connection", (socket) => {
                     bottom3,
                     question
                 });
+                sendResultToUEViaOSC(playerName, question);
                 removeFromProcessingQueue(sessionId);
             });
         }
@@ -258,7 +267,8 @@ io.on("connection", (socket) => {
 });
 
 
-// GPT Logic
+// ------------------- GPT --------------------------
+
 async function generateInsightfulQuestion(top3, bottom3, callback) {
     const prompt = `
     Given the top 3 strengths (${top3.join(", ")}) and bottom 3 strengths (${bottom3.join(", ")}) of this person, 
@@ -284,3 +294,17 @@ async function generateInsightfulQuestion(top3, bottom3, callback) {
         callback(error, null); // Invoke the callback with the error
     });
 }
+
+// ------------------- OSC --------------------------
+
+function sendResultToUEViaOSC(playerName, question) {
+  // Send gpt responded question + player Name to UE via OSC
+  const message = new OSC.Message('/player-name', playerName, '/question', question);
+  oscClient.send(message, (error) => {
+      if (error) {
+          console.error('Error sending OSC message:', error);
+          return res.status(500).send('Failed to send OSC message');
+      }
+      res.send('OSC message sent successfully');
+  });
+};
