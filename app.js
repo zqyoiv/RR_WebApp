@@ -19,8 +19,8 @@ server.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
 
-const MAX_PROCESSING = 3;
-const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes
+const MAX_PROCESSING = 3; // Max number of players in processing mode.
+const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes, after 5 min current session will be marked timeout and removed.
 let processingQueue = [];
 let waitingQueue = [];
 const sessions = {}; // Store user data by session ID
@@ -54,8 +54,10 @@ app.get("/render_result", (req, res) => {
     const sessionId = req.query.sessionId || null;
     const page = req.query.page || "name_page";
     const playerName = req.query.playerName;
+    const top3 = req.query.top3;
+    const bottom3 = req.query.bottom3;
     const question = req.query.question;
-    res.render("render_page", { sessionId, page, playerName, question });
+    res.render("render_page", { sessionId, page, playerName, top3, bottom3, question });
 });
 
 // Error page route
@@ -144,6 +146,8 @@ io.on("connection", (socket) => {
                 page: "result",
                 sessionId,
                 playerName,
+                top3,
+                bottom3,
                 question
             });
             clearTimer(sessionId); // Clear the timer as user has reached the result page
