@@ -46,6 +46,14 @@ app.get("/render_result", (req, res) => {
     res.render("render_page", { sessionId, page, playerName, top3, bottom3 });
 });
 
+// Error page route
+app.get("/error", (req, res) => {
+    res.render("error_page", { 
+        message: req.query.message || "An unexpected error occurred.",
+        redirectTimeout: 30 // Timeout in seconds to redirect to the start page
+    });
+});
+
 // WebSocket Logic
 io.on("connection", (socket) => {
     // Check origin to ban un-authorized access.
@@ -111,6 +119,11 @@ io.on("connection", (socket) => {
         let playerName = sessions[sessionId].name;
         let top3 = sessions[sessionId].top3;
         io.to(socket.id).emit("render_result", { page: "result", sessionId, playerName, top3, bottom3 });
+    });
+
+    socket.on("error", (data) => {
+        const { message } = data;
+        console.error(`Error detected: ${message}`);
     });
 
     // Disconnect cleanup
