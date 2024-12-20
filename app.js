@@ -1,12 +1,23 @@
 const express = require("express");
 const http = require("http");
+const { OpenAI } = require("openai");
 const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
+require("dotenv").config();
 
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// Start server
+server.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
+});
 
 const MAX_PROCESSING = 3;
 const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes
@@ -43,9 +54,8 @@ app.get("/render_result", (req, res) => {
     const sessionId = req.query.sessionId || null;
     const page = req.query.page || "name_page";
     const playerName = req.query.playerName;
-    const top3 = req.query.top3;
-    const bottom3 = req.query.bottom3;
-    res.render("render_page", { sessionId, page, playerName, top3, bottom3 });
+    const question = req.query.question;
+    res.render("render_page", { sessionId, page, playerName, question });
 });
 
 // Error page route
@@ -120,8 +130,24 @@ io.on("connection", (socket) => {
         sessions[sessionId].bottom3 = bottom3;
         let playerName = sessions[sessionId].name;
         let top3 = sessions[sessionId].top3;
-        io.to(socket.id).emit("render_result", { page: "result", sessionId, playerName, top3, bottom3 });
-        clearTimer(sessionId); // Clear the timer as user has reached the result page
+
+        sessions[sessionId].bottom3 = bottom3;
+
+        // Call generateInsightfulQuestion with a callback
+        generateInsightfulQuestion(top3, bottom3, (error, question) => {
+            if (error) {
+                socket.emit("error", { message: "Failed to generate question. Please try again later." });
+                return;
+            }
+
+            io.to(socket.id).emit("render_result", {
+                page: "result",
+                sessionId,
+                playerName,
+                question
+            });
+            clearTimer(sessionId); // Clear the timer as user has reached the result page
+        });
     });
 
     socket.on("error", (data) => {
@@ -209,7 +235,30 @@ io.on("connection", (socket) => {
     }
 });
 
-// Start server
-server.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-});
+
+// GPT Logic
+async function generateInsightfulQuestion(top3, bottom3, callback) {
+    const prompt = `
+    Given the top 3 strengths (${top3.join(", ")}) and bottom 3 strengths (${bottom3.join(", ")}) of this person, 
+    can you ask an high level insightful question that can trigger their deep self-reflection? Limit to 10 words.
+    `;
+
+    openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            { role: "system", content: "You are a insightful therapist." },
+            {
+                role: "user",
+                content: prompt,
+            },
+        ],
+    })
+    .then(response => {
+        const question = response.choices[0].message.content;
+        callback(null, question); // Invoke the callback with the question
+    })
+    .catch(error => {
+        console.error("Error generating question:", error);
+        callback(error, null); // Invoke the callback with the error
+    });
+}

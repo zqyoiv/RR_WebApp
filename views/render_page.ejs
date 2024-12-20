@@ -44,8 +44,7 @@
         <h1>Result</h1>
         <p><strong>Name:</strong> <%= playerName || "Unknown" %></p>
         <p><strong>Session ID:</strong> <%= sessionId %></p>
-        <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selected" %></p>
-        <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p>
+        <p><strong>Question:</strong> <%= question || "Not selected" %></p>
     <% } %>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -98,8 +97,8 @@
         });
 
         socket.on("render_result", (data) => {
-            const { page, sessionId,  playerName, top3, bottom3 } = data;
-            window.location.href = `/render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}&top3=${top3}&bottom3=${bottom3}`;
+            const { page, sessionId,  playerName, question } = data;
+            window.location.href = `/render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}&question=${question}`;
         });
 
         socket.on("error", (data) => {
