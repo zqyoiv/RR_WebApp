@@ -36,7 +36,7 @@ const characteristics = [
 
 app.set("view engine", "ejs");
 app.set("views", "views");
-app.use(express.static("public"));
+app.use(express.static("views"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Default route renders the main page
@@ -48,7 +48,8 @@ app.get("/", (req, res) => {
 app.get("/render_page", (req, res) => {
     const sessionId = req.query.sessionId || null;
     const page = req.query.page || "name_page";
-    res.render("render_page", { sessionId, page, characteristics, waitingQueue });
+    const top3 = req.query.top3 || null;
+    res.render("render_page", { sessionId, page, characteristics, waitingQueue, top3 });
 });
 
 app.get("/render_result", (req, res) => {
@@ -121,7 +122,7 @@ io.on("connection", (socket) => {
             return;
         }
         sessions[sessionId].top3 = top3;
-        io.to(socket.id).emit("render", { page: "bottom3", sessionId, characteristics });
+        io.to(socket.id).emit("render", { page: "bottom3", sessionId, characteristics, top3 });
     });
 
     socket.on("submit-bottom3", (data) => {

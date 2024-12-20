@@ -50,6 +50,7 @@
     <% } %>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/selection.js"></script>
     <script>
         const socket = io();
         let sessionId = "<%= sessionId %>";
@@ -66,6 +67,9 @@
                 socket.emit("submit-name", { sessionId, name });
             });
         <% } else if (page === "top3") { %>
+            document.querySelectorAll('input[name="top3"]').forEach(input => {
+                input.addEventListener("change", handleTop3Selection);
+            });
             document.getElementById("top3Form").addEventListener("submit", (event) => {
                 event.preventDefault();
                 const selected = Array.from(document.querySelectorAll('input[name="top3"]:checked')).map(input => input.value);
@@ -76,6 +80,15 @@
                 }
             });
         <% } else if (page === "bottom3") { %>
+            const urlParams = new URLSearchParams(window.location.search);
+            const top3String = urlParams.get("top3");
+            const top3Array = top3String.split(",");
+            top3Array.forEach(topValue => {
+                document.querySelector(`input[name="bottom3"][value="${topValue}"]`).disabled = true;
+            });
+            document.querySelectorAll('input[name="bottom3"]').forEach(input => {
+                input.addEventListener("change", handleBottom3Selection);
+            });
             document.getElementById("bottom3Form").addEventListener("submit", (event) => {
                 event.preventDefault();
                 const selected = Array.from(document.querySelectorAll('input[name="bottom3"]:checked')).map(input => input.value);
@@ -93,9 +106,8 @@
         <% } %>
 
         socket.on("render", (data) => {
-            const { page, sessionId } = data;
-            console.log(`Redirecting to: ${page} for session: ${sessionId}`);
-            window.location.href = `/render_page?sessionId=${sessionId}&page=${page}`;
+            const { page, sessionId, top3 } = data;
+            window.location.href = `/render_page?sessionId=${sessionId}&page=${page}&top3=${top3}`;
         });
 
         socket.on("render_result", (data) => {
