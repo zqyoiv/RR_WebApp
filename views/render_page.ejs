@@ -93,9 +93,10 @@
 
         socket.on("render", (data) => {
             const { page, sessionId } = data;
+            console.log(`Redirecting to: ${page} for session: ${sessionId}`);
             window.location.href = `/render_page?sessionId=${sessionId}&page=${page}`;
         });
-        
+
         socket.on("render_result", (data) => {
             const { page, sessionId,  playerName, top3, bottom3 } = data;
             window.location.href = `/render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}&top3=${top3}&bottom3=${bottom3}`;

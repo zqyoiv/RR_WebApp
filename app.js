@@ -9,9 +9,11 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const MAX_PROCESSING = 3;
+const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes
 let processingQueue = [];
 let waitingQueue = [];
 const sessions = {}; // Store user data by session ID
+const timers = {}; // Store timers for each session
 
 const characteristics = [
     "creativity", "curiosity", "judgement", "learning", "perspective", "bravery",
@@ -119,6 +121,7 @@ io.on("connection", (socket) => {
         let playerName = sessions[sessionId].name;
         let top3 = sessions[sessionId].top3;
         io.to(socket.id).emit("render_result", { page: "result", sessionId, playerName, top3, bottom3 });
+        clearTimer(sessionId); // Clear the timer as user has reached the result page
     });
 
     socket.on("error", (data) => {
@@ -138,7 +141,8 @@ io.on("connection", (socket) => {
     function addToQueue(sessionId, socket) {
         if (processingQueue.length < MAX_PROCESSING) {
             processingQueue.push(sessionId);
-            socket.emit("render", { page: "top3", sessionId, characteristics });
+            startTimer(sessionId, socket); // Start the ACTIVE_TIMER
+            socket.emit("render", { page: "top3", sessionId, characteristics: [] });
         } else {
             waitingQueue.push(sessionId);
             updateWaitingQueue();
@@ -146,10 +150,12 @@ io.on("connection", (socket) => {
         }
     }
 
-    // Utility: Remove session from the queue
+    // Utility: Remove session from the queue, remove user data and timer.
     function removeFromQueue(sessionId) {
         processingQueue = processingQueue.filter(id => id !== sessionId);
         waitingQueue = waitingQueue.filter(id => id !== sessionId);
+        clearTimer(sessionId);
+        delete sessions[sessionId];
         updateWaitingQueue();
     }
 
@@ -159,7 +165,8 @@ io.on("connection", (socket) => {
             const nextSessionId = waitingQueue.shift();
             processingQueue.push(nextSessionId);
             const nextSocketId = sessions[nextSessionId].socketId;
-            io.to(nextSocketId).emit("render", { page: "name_page", sessionId: nextSessionId, characteristics });
+            io.to(nextSocketId).emit("render", { page: "name_page", sessionId: nextSessionId, characteristics: [] });
+            startTimer(nextSessionId, io.sockets.sockets.get(nextSocketId));
             updateWaitingQueue();
         }
     }
@@ -172,12 +179,33 @@ io.on("connection", (socket) => {
         });
     }
 
-    // Delay to remove user from processing queue
-    function delayRemoval(sessionId) {
-        setTimeout(() => {
+    // Timer Management
+    function startTimer(sessionId, socket) {
+        clearTimer(sessionId); // Clear existing timer if any
+        timers[sessionId] = setTimeout(() => {
+            // SessionT timeout: Redirect to starter page and remove all stored user data and 
+            // proceed to the next waiting user.
+            if (socket) {
+                console.log("...session time out, redirect to start page: " + sessionId);
+                const socketId = sessions[sessionId].socketId;
+                io.to(socketId).emit("render", { page: "name_page", sessionId, characteristics: [] });
+            }
             removeFromQueue(sessionId);
             promoteWaitingUser();
-        }, 5 * 60 * 1000);
+        }, ACTIVE_TIMER);
+    }
+
+    function clearTimer(sessionId) {
+        if (timers[sessionId]) {
+            clearTimeout(timers[sessionId]);
+            delete timers[sessionId];
+        }
+        console.log("...timer is cleared for session id:" + sessionId);
+    }
+
+    function resetTimer(sessionId) {
+        const socket = io.sockets.sockets.get(sessions[sessionId].socketId);
+        startTimer(sessionId, socket);
     }
 });
 
