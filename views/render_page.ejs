@@ -111,6 +111,16 @@
             console.error(`Error detected: ${message}`);
             window.location.href = `/error?message=${encodeURIComponent(message)}`;
         });
+
+
+        window.addEventListener("beforeunload", (event) => {
+            const isReloadOrNavigation = (performance.navigation.type === performance.navigation.TYPE_RELOAD) ||
+                (performance.navigation.type === performance.navigation.TYPE_NAVIGATE);
+            if (!isReloadOrNavigation) {
+                console.log("Tab is being closed, not reloaded.");
+                socket.emit("disconnect", { sessionId });
+            }
+        });
     </script>
 </body>
 </html>

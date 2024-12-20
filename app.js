@@ -19,8 +19,9 @@ server.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
 
-const MAX_PROCESSING = 3; // Max number of players in processing mode.
-const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes, after 5 min current session will be marked timeout and removed.
+const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
+const MAX_PROCESSING = 2; // Max number of players in processing mode.
+const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
 let processingQueue = [];
 let waitingQueue = [];
 const sessions = {}; // Store user data by session ID
@@ -135,13 +136,8 @@ io.on("connection", (socket) => {
 
         sessions[sessionId].bottom3 = bottom3;
 
-        // Call generateInsightfulQuestion with a callback
-        generateInsightfulQuestion(top3, bottom3, (error, question) => {
-            if (error) {
-                socket.emit("error", { message: "Failed to generate question. Please try again later." });
-                return;
-            }
-
+        if (DEBUG_MODE) {
+            const question = "debug mode placeholder question to save $$";
             io.to(socket.id).emit("render_result", {
                 page: "result",
                 sessionId,
@@ -150,8 +146,26 @@ io.on("connection", (socket) => {
                 bottom3,
                 question
             });
-            clearTimer(sessionId); // Clear the timer as user has reached the result page
-        });
+            removeFromProcessingQueue(sessionId);
+        } else { // Production mode.
+            // Call generateInsightfulQuestion with a callback
+            generateInsightfulQuestion(top3, bottom3, (error, question) => {
+                if (error) {
+                    socket.emit("error", { message: "Failed to generate question. Please try again later." });
+                    return;
+                }
+
+                io.to(socket.id).emit("render_result", {
+                    page: "result",
+                    sessionId,
+                    playerName,
+                    top3,
+                    bottom3,
+                    question
+                });
+                removeFromProcessingQueue(sessionId);
+            });
+        }
     });
 
     socket.on("error", (data) => {
@@ -160,11 +174,13 @@ io.on("connection", (socket) => {
     });
 
     // Disconnect cleanup
-    socket.on("disconnect", () => {
-        // const sessionId = Object.keys(sessions).find(id => sessions[id].socketId === socket.id);
-        // removeFromQueue(sessionId);
-        // console.log(`User disconnected: ${socket.id}`);
-
+    socket.on("disconnect", (data) => {
+        const { sessionId } = data;
+        // console.log("socket disconnect data: " + data);
+        if (data.includes("transport close")) { 
+            removeFromProcessingQueue(sessionId);
+            // console.log("socket disconnect, removed session id: " + sessionId);
+        }
     });
 
     // Utility: Add session to the appropriate queue
@@ -178,14 +194,16 @@ io.on("connection", (socket) => {
             updateWaitingQueue();
             socket.emit("render", { page: "please_wait", sessionId, waitingQueue });
         }
+        console.log("Processing queue:  " + processingQueue);
+        console.log("Waiting queue:  " + waitingQueue);
     }
 
     // Utility: Remove session from the queue, remove user data and timer.
-    function removeFromQueue(sessionId) {
+    function removeFromProcessingQueue(sessionId) {
         processingQueue = processingQueue.filter(id => id !== sessionId);
-        waitingQueue = waitingQueue.filter(id => id !== sessionId);
         clearTimer(sessionId);
         delete sessions[sessionId];
+        promoteWaitingUser();
         updateWaitingQueue();
     }
 
@@ -195,13 +213,12 @@ io.on("connection", (socket) => {
             const nextSessionId = waitingQueue.shift();
             processingQueue.push(nextSessionId);
             const nextSocketId = sessions[nextSessionId].socketId;
-            io.to(nextSocketId).emit("render", { page: "name_page", sessionId: nextSessionId, characteristics: [] });
+            io.to(nextSocketId).emit("render", { page: "top3", sessionId: nextSessionId, characteristics:[] });
             startTimer(nextSessionId, io.sockets.sockets.get(nextSocketId));
             updateWaitingQueue();
         }
     }
 
-    // Utility: Notify all users about the updated waiting queue
     function updateWaitingQueue() {
         waitingQueue.forEach(sessionId => {
             const socketId = sessions[sessionId].socketId;
@@ -220,7 +237,7 @@ io.on("connection", (socket) => {
                 const socketId = sessions[sessionId].socketId;
                 io.to(socketId).emit("render", { page: "name_page", sessionId, characteristics: [] });
             }
-            removeFromQueue(sessionId);
+            removeFromProcessingQueue(sessionId);
             promoteWaitingUser();
         }, ACTIVE_TIMER);
     }
