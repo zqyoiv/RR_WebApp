@@ -1,60 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Top 3</title>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const checkboxes = document.querySelectorAll('input[name="traits"]');
-      const maxSelections = 3;
-      const selectedTraits = []; // Queue to store selected traits in time order
-
-      checkboxes.forEach((checkbox) => {
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) {
-            selectedTraits.push(checkbox); // Add the checkbox to the queue
-
-            // If the queue exceeds maxSelections, remove the first (oldest) selected trait
-            if (selectedTraits.length > maxSelections) {
-              const oldestCheckbox = selectedTraits.shift(); // Remove the oldest
-              oldestCheckbox.checked = false; // Uncheck it
-            }
-          } else {
-            // Remove the unchecked checkbox from the queue
-            const index = selectedTraits.indexOf(checkbox);
-            if (index !== -1) {
-              selectedTraits.splice(index, 1);
-            }
-          }
-        });
-      });
-
-      // Save the top 3 traits when the user clicks "Next"
-      const form = document.querySelector("form");
-      form.addEventListener("submit", (e) => {
-        const selectedCheckboxes = selectedTraits.map((cb) => cb.value);
-
-        if (selectedCheckboxes.length !== maxSelections) {
-          e.preventDefault();
-          alert(`Please select exactly ${maxSelections} traits.`);
-          return;
-        }
-
-        // Save top 3 selections to localStorage
-        localStorage.setItem("top3", JSON.stringify(selectedCheckboxes));
-      });
-    });
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 3 Personalities</title>
 </head>
 <body>
-  <form action="/bottom3" method="GET">
-    <h3>Select Your Top 3 Traits:</h3>
-    <% characteristics.forEach((trait) => { %>
-      <label>
-        <input type="checkbox" name="traits" value="<%= trait %>" />
-        <%= trait %>
-      </label>
-    <% }) %>
-    <button type="submit">Next</button>
-  </form>
+    <h1>Select Your Top 3 Personalities</h1>
+    <form id="top3Form">
+        <% for (let characteristic of characteristics) { %>
+            <input type="checkbox" name="top3" value="<%= characteristic %>" /> <%= characteristic %><br />
+        <% } %>
+        <button type="submit">Next</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById("top3Form");
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const selected = Array.from(document.querySelectorAll('input[name="top3"]:checked'))
+                .map(input => input.value);
+            if (selected.length === 3) {
+                const sessionId = "<%= sessionId %>";
+                socket.emit("submit-top3", { sessionId, top3: selected });
+                window.location.href = `/bottom3?sessionId=${sessionId}`;
+            } else {
+                alert("Please select exactly 3 personalities.");
+            }
+        });
+    </script>
 </body>
 </html>

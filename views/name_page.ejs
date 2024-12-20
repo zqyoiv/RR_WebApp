@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Name Page</title>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.querySelector("form");
-
-      form.addEventListener("submit", (e) => {
-        const name = document.querySelector('input[name="name"]').value;
-
-        if (!name.trim()) {
-          e.preventDefault();
-          alert("Please enter your name.");
-          return;
-        }
-
-        // Save name to localStorage
-        localStorage.setItem("userName", name.trim());
-      });
-    });
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Page</title>
 </head>
 <body>
-  <form action="/top3" method="GET">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required />
-    <button type="submit">Next</button>
-  </form>
+    <h1>Enter Your Name</h1>
+    <form id="nameForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required />
+        <button type="submit">Next</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById("nameForm");
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const name = document.getElementById("name").value;
+            const sessionId = sessionStorage.getItem("sessionId");
+            socket.emit("submit-name", { sessionId, name });
+        });
+
+        socket.on("queue-update", (data) => {
+            if (data.nextPage) {
+                const sessionId = sessionStorage.getItem("sessionId");
+                window.location.href = `${data.nextPage}?sessionId=${sessionId}`;
+            }
+        });
+
+        socket.on("session-assign", (data) => {
+            sessionStorage.setItem("sessionId", data.sessionId);
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Page</title>
+</head>
+<body>
+    <% if (page === "name_page") { %>
+        <h1>Enter Your Name</h1>
+        <form id="nameForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required />
+            <button type="submit">Next</button>
+        </form>
+    <% } else if (page === "top3") { %>
+        <h1>Select Your Top 3 Personalities</h1>
+        <form id="top3Form">
+            <% for (let characteristic of characteristics) { %>
+                <input type="checkbox" name="top3" value="<%= characteristic %>" /> <%= characteristic %><br />
+            <% } %>
+            <button type="submit">Next</button>
+        </form>
+    <% } else if (page === "bottom3") { %>
+        <h1>Select Your Bottom 3 Personalities</h1>
+        <form id="bottom3Form">
+            <% for (let characteristic of characteristics) { %>
+                <input type="checkbox" name="bottom3" value="<%= characteristic %>" /> <%= characteristic %><br />
+            <% } %>
+            <button type="submit">Next</button>
+        </form>
+    <% } else if (page === "please_wait") { %>
+        <h1>Please Wait</h1>
+        <p>The processing queue is full. You are in the waiting queue.</p>
+        <h2>Current Waiting Queue:</h2>
+        <ul id="waitingQueue">
+            <% for (let id of waitingQueue) { %>
+                <li><%= id %></li>
+            <% } %>
+        </ul>
+    <% } else if (page === "result") { %>
+        <h1>Result</h1>
+        <p><strong>Name:</strong> <%= playerName || "Unknown" %></p>
+        <p><strong>Session ID:</strong> <%= sessionId %></p>
+        <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selected" %></p>
+        <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p>
+    <% } %>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let sessionId = "<%= sessionId %>";
+
+        socket.on("session-assign", (data) => {
+            sessionId = data.sessionId;
+            console.log(`Assigned session ID: ${sessionId}`);
+        });
+
+        <% if (page === "name_page") { %>
+            document.getElementById("nameForm").addEventListener("submit", (event) => {
+                event.preventDefault();
+                const name = document.getElementById("name").value;
+                socket.emit("submit-name", { sessionId, name });
+            });
+        <% } else if (page === "top3") { %>
+            document.getElementById("top3Form").addEventListener("submit", (event) => {
+                event.preventDefault();
+                const selected = Array.from(document.querySelectorAll('input[name="top3"]:checked')).map(input => input.value);
+                if (selected.length === 3) {
+                    socket.emit("submit-top3", { sessionId, top3: selected });
+                } else {
+                    alert("Please select exactly 3 personalities.");
+                }
+            });
+        <% } else if (page === "bottom3") { %>
+            document.getElementById("bottom3Form").addEventListener("submit", (event) => {
+                event.preventDefault();
+                const selected = Array.from(document.querySelectorAll('input[name="bottom3"]:checked')).map(input => input.value);
+                if (selected.length === 3) {
+                    socket.emit("submit-bottom3", { sessionId, bottom3: selected });
+                } else {
+                    alert("Please select exactly 3 personalities.");
+                }
+            });
+        <% } else if (page === "please_wait") { %>
+            socket.on("update-waiting-queue", (data) => {
+                const waitingQueue = document.getElementById("waitingQueue");
+                waitingQueue.innerHTML = data.waitingQueue.map(id => `<li>${id}</li>`).join("");
+            });
+        <% } %>
+
+        socket.on("render", (data) => {
+            const { page, sessionId } = data;
+            window.location.href = `/render_page?sessionId=${sessionId}&page=${page}`;
+        });
+        socket.on("render_result", (data) => {
+            const { page, sessionId,  playerName, top3, bottom3 } = data;
+            window.location.href = `/render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}&top3=${top3}&bottom3=${bottom3}`;
+        });
+    </script>
+</body>
+</html>

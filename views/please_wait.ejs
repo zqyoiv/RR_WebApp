@@ -1,10 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Please Wait</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Please Wait</title>
 </head>
 <body>
-  <h3>Please Wait...</h3>
-  <p>The system is currently processing other clients. You will be redirected as soon as a spot is available.</p>
+    <h1>Please Wait</h1>
+    <p>The processing queue is full. You are in the waiting queue.</p>
+    <h2>Current Waiting Queue:</h2>
+    <ul id="waitingQueue">
+        <% for (let id of waitingQueue) { %>
+            <li><%= id %></li>
+        <% } %>
+    </ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on("update-waiting-queue", (data) => {
+            const waitingQueue = document.getElementById("waitingQueue");
+            waitingQueue.innerHTML = data.waitingQueue.map(id => `<li>${id}</li>`).join("");
+        });
+    </script>
 </body>
 </html>

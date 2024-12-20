@@ -1,73 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bottom 3</title>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const checkboxes = document.querySelectorAll('input[name="traits"]');
-      const maxSelections = 3;
-      const selectedTraits = []; // Queue to store selected traits in time order
-
-      checkboxes.forEach((checkbox) => {
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) {
-            selectedTraits.push(checkbox); // Add the checkbox to the queue
-
-            // If the queue exceeds maxSelections, remove the first (oldest) selected trait
-            if (selectedTraits.length > maxSelections) {
-              const oldestCheckbox = selectedTraits.shift(); // Remove the oldest
-              oldestCheckbox.checked = false; // Uncheck it
-            }
-          } else {
-            // Remove the unchecked checkbox from the queue
-            const index = selectedTraits.indexOf(checkbox);
-            if (index !== -1) {
-              selectedTraits.splice(index, 1);
-            }
-          }
-        });
-      });
-
-      // Submit both top 3 and bottom 3 traits when the user clicks "Next"
-      const form = document.querySelector("form");
-      form.addEventListener("submit", (e) => {
-        const selectedCheckboxes = selectedTraits.map((cb) => cb.value);
-
-        if (selectedCheckboxes.length !== maxSelections) {
-          e.preventDefault();
-          alert(`Please select exactly ${maxSelections} traits.`);
-          return;
-        }
-
-        // Retrieve name and top 3 traits from localStorage
-        const userName = localStorage.getItem("userName");
-        const top3 = JSON.parse(localStorage.getItem("top3"));
-        if (!top3 || top3.length !== maxSelections) {
-          e.preventDefault();
-          alert("Top 3 traits are missing. Please go back and select them.");
-          return;
-        }
-
-        // Add top 3 and bottom 3 traits to a hidden input for server submission
-        const hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.name = "data";
-        hiddenInput.value = JSON.stringify({ userName, top3, bottom3: selectedCheckboxes });
-        form.appendChild(hiddenInput);
-      });
-    });
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bottom 3 Personalities</title>
 </head>
 <body>
-  <form action="/result" method="POST">
-    <h3>Select Your Bottom 3 Traits:</h3>
-    <% characteristics.forEach((trait) => { %>
-      <label>
-        <input type="checkbox" name="traits" value="<%= trait %>" />
-        <%= trait %>
-      </label>
-    <% }) %>
-    <button type="submit">Next</button>
-  </form>
+    <h1>Select Your Bottom 3 Personalities</h1>
+    <form id="bottom3Form">
+        <% for (let characteristic of characteristics) { %>
+            <input type="checkbox" name="bottom3" value="<%= characteristic %>" /> <%= characteristic %><br />
+        <% } %>
+        <button type="submit">Next</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById("bottom3Form");
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const selected = Array.from(document.querySelectorAll('input[name="bottom3"]:checked'))
+                .map(input => input.value);
+            if (selected.length === 3) {
+                const sessionId = "<%= sessionId %>";
+                socket.emit("submit-bottom3", { sessionId, bottom3: selected });
+            } else {
+                alert("Please select exactly 3 personalities.");
+            }
+        });
+
+        socket.on("queue-update", (data) => {
+            if (data.nextPage) {
+                window.location.href = data.nextPage;
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,31 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Result</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result</title>
 </head>
 <body>
-  <div>
-    <h3>Hi <%= name %>, the Garden Wants To Ask You:</h3>
-    <p><%= text %></p>
-
-    <h3>Your Selections</h3>
-    <div>
-      <h4>Top 3 Traits:</h4>
-      <ul>
-        <% top3.forEach((trait) => { %>
-          <li><%= trait %></li>
-        <% }) %>
-      </ul>
-    </div>
-
-    <div>
-      <h4>Bottom 3 Traits:</h4>
-      <ul>
-        <% bottom3.forEach((trait) => { %>
-          <li><%= trait %></li>
-        <% }) %>
-      </ul>
-    </div>
-  </div>
+    <h1>Result</h1>
+    <p><strong>Name:</strong> <%= name %></p>
+    <p><strong>Session ID:</strong> <%= sessionId %></p>
+    <p><strong>Top 3 Personalities:</strong> <%= top3.join(", ") %></p>
+    <p><strong>Bottom 3 Personalities:</strong> <%= bottom3.join(", ") %></p>
 </body>
 </html>

@@ -1,23 +1,18 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 const { v4: uuidv4 } = require("uuid");
-const { webcrypto } = require("crypto");
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser()); // Middleware to parse cookies
-app.set("view engine", "ejs");
+const MAX_PROCESSING = 3;
+let processingQueue = [];
+let waitingQueue = [];
+const sessions = {}; // Store user data by session ID
 
-const MAX_PROCESSING = 2; // Maximum number of sessions that can be processed concurrently
-const ACTIVE_TIMER = 5 * 60 * 1000; // 5 minutes
-const VISUAL_DISPLAY_TIMER = 10 * 60 * 1000; // 10 minutes
-
-let processingQueue = []; // Queue for sessions being processed
-let waitingQueue = []; // Queue for waiting sessions
-const sessions = {}; // Store session data by `sessionId`
-
-// Data
 const characteristics = [
     "creativity", "curiosity", "judgement", "learning", "perspective", "bravery",
     "zest", "perseverance", "honesty", "intelligence", "love", "kindness",
@@ -25,139 +20,155 @@ const characteristics = [
     "humility", "prudence", "self-regulation", "appreciation", "gratitude", "hope", "humor"
 ];
 
-// Middleware to assign a unique session ID to each session
-app.use((req, res, next) => {
-    if (!req.cookies.sessionId) {
-        // Generate a new session ID
-        const sessionId = uuidv4();
-        res.cookie("sessionId", sessionId); // Set session ID in a cookie
-        sessions[sessionId] = { name: null, top3: null, bottom3: null, timeout: null }; // Initialize session data
-        req.sessionId = sessionId; // Attach sessionId to the request
-    } else {
-        req.sessionId = req.cookies.sessionId;
-        if (!sessions[req.sessionId]) {
-            // If the session ID is missing in the `sessions` object, reinitialize it
-            sessions[req.sessionId] = { name: null, top3: null, bottom3: null, timeout: null };
-        }
-    }
-    next();
+app.set("view engine", "ejs");
+app.set("views", "views");
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Default route renders the main page
+app.get("/", (req, res) => {
+    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
 });
 
-// Utility: Add session to processing or waiting queue
-const addSessionToQueue = (sessionId, res) => {
-    if (processingQueue.length < MAX_PROCESSING) {
-        processingQueue.push(sessionId);
-        startSessionTimeout(sessionId);
-        console.log("Processing Queue Updated (Client Added):", processingQueue); 
-    } else {
-        waitingQueue.push(sessionId);
-        console.log("Waiting Queue Updated (Client Added):", waitingQueue); 
-        res.render("please_wait"); // Show "Please wait..." page
-    }
-};
+// Render page for all steps
+app.get("/render_page", (req, res) => {
+    const sessionId = req.query.sessionId || null;
+    const page = req.query.page || "name_page";
+    res.render("render_page", { sessionId, page, characteristics, waitingQueue });
+});
 
-// Utility: Remove session from processin queue and update queues
-const removeSessionFromQueue = (sessionId) => {
-    processingQueue = processingQueue.filter((id) => id !== sessionId);
-    clearTimeout(sessions[sessionId]?.timeout); // Clear the timeout
-    console.log("Processing Queue Updated (Client Removed):", processingQueue); 
+app.get("/render_result", (req, res) => {
+    const sessionId = req.query.sessionId || null;
+    const page = req.query.page || "name_page";
+    const playerName = req.query.playerName;
+    const top3 = req.query.top3;
+    const bottom3 = req.query.bottom3;
+    res.render("render_page", { sessionId, page, playerName, top3, bottom3 });
+});
 
-    // Move first session in waiting queue to processing queue
-    if (waitingQueue.length > 0) {
-        const nextClient = waitingQueue.shift();
-        console.log("Waiting Queue Updated (Client Removed):", waitingQueue); 
-        processingQueue.push(nextClient);
-        console.log("Processing Queue Updated (Client Added):", processingQueue); 
-        startSessionTimeout(nextClient);
-
-        // Simulate server-side event to inform the session to reload
-        sessions[nextClient].redirectToNamePage = true; // Mark for redirection
-    }
-};
-
-// Utility: Start timeout for a session
-const startSessionTimeout = (sessionId) => {
-    // Ensure the session object exists
-    if (!sessions[sessionId]) {
-        sessions[sessionId] = { name: null, top3: null, bottom3: null, timeout: null };
-    }
-
-    // Clear any existing timeout for the session
-    if (sessions[sessionId].timeout) {
-        clearTimeout(sessions[sessionId].timeout);
-    }
-
-    // Set a timeout for the session, if user hasn't finish within 5 min, remove them from queue.
-    sessions[sessionId].timeout = setTimeout(() => {
-        removeSessionFromQueue(sessionId);
-    }, ACTIVE_TIMER);
-};
-
-// Name Page
-app.get("/", (req, res) => {
-    const sessionId = req.sessionId;
-
-    // Check if the session is waiting to be redirected
-    if (sessions[sessionId]?.redirectToNamePage) {
-        delete sessions[sessionId].redirectToNamePage;
-        retres.render("/name_page");
-    }
-
-    if (!processingQueue.includes(sessionId) && !waitingQueue.includes(sessionId)) {
-        addSessionToQueue(sessionId, res);
-        res.render("name_page");
+// WebSocket Logic
+io.on("connection", (socket) => {
+    // Check origin to ban un-authorized access.
+    const origin = socket.handshake.headers.referer;
+    if (!origin.includes("localhost:3000")) {
+        console.log(`Connection from unauthorized origin: ${origin}`);
+        socket.disconnect();
         return;
     }
-});
 
-app.post("/top3", (req, res) => {
-    const sessionId = req.sessionId;
-    sessions[sessionId].name = req.body.name;
-    res.redirect("/top3");
-});
+    // Check for existing sessionId in the URL
+    const referer = socket.handshake.headers.referer;
+    const url = new URL(referer);
+    const sessionId = url.searchParams.get("sessionId") || uuidv4();
+    console.log(`session id: ${sessionId}`);
 
-// Top 3 Page
-app.get("/top3", (req, res) => {
-    res.render("top3", { characteristics });
-});
+    // If sessionId exists, update it; otherwise, create a new session
+    if (!sessions[sessionId]) {
+        sessions[sessionId] = { name: null, top3: null, bottom3: null, socketId: socket.id };
+    } else {
+        sessions[sessionId].socketId = socket.id; // Update socket ID for reconnection
+    }
 
-app.post("/bottom3", (req, res) => {
-    const sessionId = req.sessionId;
-    sessions[sessionId].top3 = req.body.traits;
-    res.redirect("/bottom3");
-});
+    socket.emit("session-assign", { sessionId });
 
-// Bottom 3 Page
-app.get("/bottom3", (req, res) => {
-    res.render("bottom3", { characteristics });
-});
-
-app.post("/result", (req, res) => {
-    const sessionId = req.sessionId;
-    const { name, top3, bottom3 } = JSON.parse(req.body.data);
-
-    sessions[sessionId].name = name;
-    sessions[sessionId].top3 = top3;
-    sessions[sessionId].bottom3 = bottom3;
-    // Clear the sessionId cookie
-    res.clearCookie("sessionId");
-
-    res.render("result", {
-        name: sessions[sessionId].name,
-        text: "gpt question palceholder...",
-        top3: sessions[sessionId].top3,
-        bottom3: sessions[sessionId].bottom3,
+    // Handle page transitions and data submissions
+    socket.on("navigate", (data) => {
+        const { sessionId, page } = data;
+        if (!sessions[sessionId]) {
+            console.error(`Invalid sessionId: ${sessionId}`);
+            return;
+        }
+        socket.emit("render", { page, sessionId, waitingQueue, characteristics });
     });
 
-    // Remove the session from the queue after they see the result
-    removeSessionFromQueue(sessionId);
+    socket.on("submit-name", (data) => {
+        const { sessionId, name } = data;
+        if (!sessions[sessionId]) {
+            console.error(`Invalid sessionId: ${sessionId}`);
+            return;
+        }
+        sessions[sessionId].name = name;
+        addToQueue(sessionId, socket);
+    });
+
+    socket.on("submit-top3", (data) => {
+        const { sessionId, top3 } = data;
+        if (!sessions[sessionId]) {
+            console.error(`Invalid sessionId: ${sessionId}`);
+            return;
+        }
+        sessions[sessionId].top3 = top3;
+        io.to(socket.id).emit("render", { page: "bottom3", sessionId, characteristics });
+    });
+
+    socket.on("submit-bottom3", (data) => {
+        const { sessionId, bottom3 } = data;
+        if (!sessions[sessionId]) {
+            console.error(`Invalid sessionId: ${sessionId}`);
+            return;
+        }
+        sessions[sessionId].bottom3 = bottom3;
+        let playerName = sessions[sessionId].name;
+        let top3 = sessions[sessionId].top3;
+        io.to(socket.id).emit("render_result", { page: "result", sessionId, playerName, top3, bottom3 });
+    });
+
+    // Disconnect cleanup
+    socket.on("disconnect", () => {
+        // const sessionId = Object.keys(sessions).find(id => sessions[id].socketId === socket.id);
+        // removeFromQueue(sessionId);
+        // console.log(`User disconnected: ${socket.id}`);
+
+    });
+
+    // Utility: Add session to the appropriate queue
+    function addToQueue(sessionId, socket) {
+        if (processingQueue.length < MAX_PROCESSING) {
+            processingQueue.push(sessionId);
+            socket.emit("render", { page: "top3", sessionId, characteristics });
+        } else {
+            waitingQueue.push(sessionId);
+            updateWaitingQueue();
+            socket.emit("render", { page: "please_wait", sessionId, waitingQueue });
+        }
+    }
+
+    // Utility: Remove session from the queue
+    function removeFromQueue(sessionId) {
+        processingQueue = processingQueue.filter(id => id !== sessionId);
+        waitingQueue = waitingQueue.filter(id => id !== sessionId);
+        updateWaitingQueue();
+    }
+
+    // Utility: Move from waiting to processing queue
+    function promoteWaitingUser() {
+        if (processingQueue.length < MAX_PROCESSING && waitingQueue.length > 0) {
+            const nextSessionId = waitingQueue.shift();
+            processingQueue.push(nextSessionId);
+            const nextSocketId = sessions[nextSessionId].socketId;
+            io.to(nextSocketId).emit("render", { page: "name_page", sessionId: nextSessionId, characteristics });
+            updateWaitingQueue();
+        }
+    }
+
+    // Utility: Notify all users about the updated waiting queue
+    function updateWaitingQueue() {
+        waitingQueue.forEach(sessionId => {
+            const socketId = sessions[sessionId].socketId;
+            io.to(socketId).emit("update-waiting-queue", { waitingQueue });
+        });
+    }
+
+    // Delay to remove user from processing queue
+    function delayRemoval(sessionId) {
+        setTimeout(() => {
+            removeFromQueue(sessionId);
+            promoteWaitingUser();
+        }, 5 * 60 * 1000);
+    }
 });
 
-// Please Wait Page
-app.get("/please_wait", (req, res) => {
-    res.render("please_wait");
+// Start server
+server.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
 });
-
-// Start Server
-const PORT = 3000;
-app.listen(PORT, () => console.log(`App running on http://localhost:${PORT}`));
