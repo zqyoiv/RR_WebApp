@@ -2,14 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error</title>
 </head>
 <body>
-    <h1>Error</h1>
-    <p><%= message %></p>
-    <p>You will be redirected to the start page in <span id="countdown"><%= redirectTimeout %></span> seconds.</p>
-
+    <div class="full-screen-container" id="error-page">
+        <div class="content-container">
+            <h1>Error</h1>
+            <p><%= message %></p>
+            <p>You will be redirected to the start page in <span id="countdown"><%= redirectTimeout %></span> seconds.</p>
+        </div>
+    </div>
     <script>
         const countdownElement = document.getElementById("countdown");
         let remainingTime = parseInt(countdownElement.innerText);

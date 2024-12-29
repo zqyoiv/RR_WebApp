@@ -30,18 +30,32 @@ body, html, button, input {
     background-position: center;
 }
 
+.full-screen-container#error-page,
+.full-screen-container#please-wait,
+.full-screen-container#name-page {
+    justify-content: center;
+    align-items: center;
+}
+
+.full-screen-container#error-page,
+.full-screen-container#please-wait {
+    .content-container {
+        text-align: center;
+    }
+}
+
 /* Content container */
 .content-container {
-    text-align: left;
+    color: #fff;
     padding: 1.5rem;
     border-radius: 10px;
     width: 90%;
     max-width: calc(100vw - 3rem);
+    text-align: left;
 }
 
 .content-container h2,
 .content-container h3 {
-    color: #fff;
     text-align: center;
 }
 
@@ -73,11 +87,6 @@ button#submit-button.active {
  * ================= Name Page ======================
  * ================================================== 
  */
-
- .full-screen-container#name-page {
-    justify-content: center;
-    align-items: center;
-}
 
 .full-screen-container#name-page {
     /* Input field */
@@ -200,4 +209,14 @@ button#submit-button.active {
     .content-container {
         padding-bottom: 20rem; /* tested on many screens */
     }
+}
+
+/** 
+ * ==================================================
+ * ================= Result page ====================
+ * ================================================== 
+ */
+ .full-screen-container#result-page.flower1 {
+    background-image: url("assets/result/flower3_bg.png");
+    opacity: 0.7;
 }

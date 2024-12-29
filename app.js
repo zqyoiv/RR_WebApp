@@ -48,9 +48,47 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Default route renders the main page
 app.get("/", (req, res) => {
-    // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
-    res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingQueue, top3: null });
+    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
 });
+
+
+// type: localhost:3000/test?index=1
+app.get("/test", (req, res) => {
+    const index = parseInt(req.query.index) || 0;
+    testRender(res, index);
+});
+
+function testRender(res, index) {
+    switch (index) {
+        case 0:
+            res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+            break;
+        case 1: // top3
+            res.render("render_page", { sessionId: null, page: "top3", characteristics, waitingQueue });
+            break;
+        case 2: // bottom3
+            res.render("render_page", { sessionId: null, page: "bottom3", characteristics, waitingQueue });
+            break;
+        case 3: // wait result
+            res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingQueue, top3: null });
+            break;
+        case 4: // result
+            res.render("render_page", { sessionId: "123", page:"result", playerName: "vio", 
+                top3: "curiosity,creativity,humor", bottom3: "leadership,forgiveness,fairness", 
+                question:"Are you afraid that opening up to others might make you lose \
+                          the freedom that keeps you feeling safe?" });
+            break;
+        case 5: // queue
+            res.render("render_page", { sessionId: null, page: "please_wait", waitingQueue, top3: null });  
+            break;
+        case 6: // error
+            res.render("error_page", { 
+                message: "An unexpected error occurred.",
+                redirectTimeout: 30 // Timeout in seconds to redirect to the start page
+            });
+            break;
+    }
+}
 
 // Render page for all steps
 app.get("/render_page", (req, res) => {
