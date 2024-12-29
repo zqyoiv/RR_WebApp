@@ -8,15 +8,7 @@
 </head>
 <body style="margin:0px;">
     <% if (page === "name_page") { %>
-        <!-- <h1>What are your 3 strengths and 3 weaknesses?</h1>
-        <h3>Plant your seed in the garden, and watch it grow. The garden will reveal a hidden insight.</h3>
-        <h3>Enter Your Name</h3>
-        <form id="nameForm">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required />
-            <button type="submit">Next</button>
-        </form> -->
-        <div class="full-screen-container">
+        <div class="full-screen-container" id="name-page">
             <div class="content-container">
                 <h2>Enter Your Name</h2>
                 <form id="nameForm">
@@ -28,13 +20,24 @@
             </div>
         </div>
     <% } else if (page === "top3") { %>
-        <h1>Select Your Top 3 Personalities</h1>
+        <!-- <h1>Select Your Top 3 Personalities</h1>
         <form id="top3Form">
             <% for (let characteristic of characteristics) { %>
                 <input type="checkbox" name="top3" value="<%= characteristic %>" /> <%= characteristic %><br />
             <% } %>
             <button type="submit">Next</button>
-        </form>
+        </form> -->
+        <div class="full-screen-container" id="top3-page">
+        <div class="content-container">
+            <h2>How Would You Describe Yourself In 3 Words?</h2>
+            <form class="input-grid" id="top3Form">
+                <% for (let characteristic of characteristics) { %>
+                    <input class="option-input" type="button" name="top3" value="<%= characteristic %>" />
+                <% } %>
+                <button id="submit-button" type="submit">Continue</button>
+            </form>
+        </div>
+    </div>
     <% } else if (page === "bottom3") { %>
         <h1>Select Your Bottom 3 Personalities</h1>
         <form id="bottom3Form">
@@ -81,11 +84,11 @@
             });
         <% } else if (page === "top3") { %>
             document.querySelectorAll('input[name="top3"]').forEach(input => {
-                input.addEventListener("change", handleTop3Selection);
+                input.addEventListener("click", handleTop3Selection);
             });
             document.getElementById("top3Form").addEventListener("submit", (event) => {
                 event.preventDefault();
-                const selected = Array.from(document.querySelectorAll('input[name="top3"]:checked')).map(input => input.value);
+                const selected = Array.from(document.querySelectorAll('input[name="top3"].selected')).map(input => input.value);
                 if (selected.length === 3) {
                     socket.emit("submit-top3", { sessionId, top3: selected });
                 } else {

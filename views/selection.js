@@ -4,20 +4,23 @@ const selectedBottom3 = new Set();
 
 function handleTop3Selection(event) {
     const selectedValue = event.target.value;
+    const input = event.target;
 
-    if (event.target.checked) {
+    if (!selectedTop3.has(selectedValue)) {
         // Add to top3
         selectedTop3.add(selectedValue);
+        input.classList.add('selected');
 
         // Ensure FIFO logic for Top3
         if (selectedTop3.size > MAX_SELECTION) {
             const firstSelected = Array.from(selectedTop3)[0];
             selectedTop3.delete(firstSelected);
-            document.querySelector(`input[name="top3"][value="${firstSelected}"]`).checked = false;
+            document.querySelector(`input[name="top3"][value="${firstSelected}"]`).classList.remove('selected');
         }
     } else {
         // Remove from Top3
         selectedTop3.delete(selectedValue);
+        input.classList.remove('selected');
     }
 }
 
