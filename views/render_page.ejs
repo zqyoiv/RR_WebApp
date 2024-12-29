@@ -1,20 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Page</title>
 </head>
-<body>
+<body style="margin:0px;">
     <% if (page === "name_page") { %>
-        <h1>What are your 3 strengths and 3 weaknesses?</h1>
+        <!-- <h1>What are your 3 strengths and 3 weaknesses?</h1>
         <h3>Plant your seed in the garden, and watch it grow. The garden will reveal a hidden insight.</h3>
         <h3>Enter Your Name</h3>
         <form id="nameForm">
             <label for="name">Name:</label>
             <input type="text" id="name" name="name" required />
             <button type="submit">Next</button>
-        </form>
+        </form> -->
+        <div class="full-screen-container">
+            <div class="content-container">
+                <h2>Enter Your Name</h2>
+                <form id="nameForm">
+                    <div class="input-container">
+                        <input id="name-input" type="text" placeholder="Name" name="name" required />
+                    </div>
+                    <button id="submit-button" type="submit">Continue</button>
+                </form>
+            </div>
+        </div>
     <% } else if (page === "top3") { %>
         <h1>Select Your Top 3 Personalities</h1>
         <form id="top3Form">
@@ -51,6 +63,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/selection.js"></script>
+    <script src="/view_style.js"></script>
     <script>
         const socket = io();
         let sessionId = "<%= sessionId %>";
@@ -63,7 +76,7 @@
         <% if (page === "name_page") { %>
             document.getElementById("nameForm").addEventListener("submit", (event) => {
                 event.preventDefault();
-                const name = document.getElementById("name").value;
+                const name = document.getElementById("name-input").value;
                 socket.emit("submit-name", { sessionId, name });
             });
         <% } else if (page === "top3") { %>
