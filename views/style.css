@@ -5,6 +5,10 @@
     font-style: normal;  /* Optional: Specify style */
 }
 
+body {
+    background-color: #000;
+}
+
 body, html, button, input {
     margin: 0;
     padding: 0;
@@ -26,11 +30,6 @@ body, html, button, input {
     background-position: center;
 }
 
-.full-screen-container#name-page {
-    justify-content: center;
-    align-items: center;
-}
-
 /* Content container */
 .content-container {
     text-align: left;
@@ -38,6 +37,12 @@ body, html, button, input {
     border-radius: 10px;
     width: 90%;
     max-width: calc(100vw - 3rem);
+}
+
+.content-container h2,
+.content-container h3 {
+    color: #fff;
+    text-align: center;
 }
 
 /* Continue Button */
@@ -68,6 +73,12 @@ button#submit-button.active {
  * ================= Name Page ======================
  * ================================================== 
  */
+
+ .full-screen-container#name-page {
+    justify-content: center;
+    align-items: center;
+}
+
 .full-screen-container#name-page {
     /* Input field */
     .input-container {
@@ -76,7 +87,6 @@ button#submit-button.active {
 
     /* Heading */
     .content-container h2 {
-        color: #fff;
         font-size: 1.5rem;
         margin-bottom: 20px;
     }
@@ -138,4 +148,56 @@ button#submit-button.active {
         color: #000;
     }
     
+}
+
+
+/** 
+ * ==================================================
+ * ============ Wait for results page ===============
+ * ================================================== 
+ */
+
+.full-screen-container#wait-result-page {
+    justify-content: center;
+    align-items: flex-end;
+
+    /* Content container */
+    .content-container {
+        text-align: left;
+        padding: 1.5rem;
+        padding-bottom: 4rem;
+        border-radius: 10px;
+        width: 90%;
+        max-width: calc(100vw - 3rem);
+    }
+
+    .content-container h2 {
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+    }
+    .content-container h3 {
+        font-weight: 100;
+        font-size: 1.2rem;
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+    }
+}
+
+.full-screen-container#wait-result-page.flower1 {
+    background-image: url("assets/flower/flower1.png");
+    opacity: 0.9;
+}
+
+.full-screen-container#wait-result-page.flower2 {
+    background-image: url("assets/flower/flower2.png");
+    opacity: 0.9;
+}
+
+.full-screen-container#wait-result-page.flower3 {
+    justify-content: center;
+    align-items: center;
+    background-image: url("assets/flower/flower3.png");
+    opacity: 0.9;
+
+    .content-container {
+        padding-bottom: 20rem; /* tested on many screens */
+    }
 }

@@ -32,13 +32,6 @@
             </div>
         </div>
     <% } else if (page === "bottom3") { %>
-        <!-- <h1>Select Your Bottom 3 Personalities</h1>
-        <form id="bottom3Form">
-            <% for (let characteristic of characteristics) { %>
-                <input type="checkbox" name="bottom3" value="<%= characteristic %>" /> <%= characteristic %><br />
-            <% } %>
-            <button type="submit">Next</button>
-        </form> -->
         <div class="full-screen-container" id="bottom3-page">
             <div class="content-container">
                 <h2>What 3 words you would never describe yourself?</h2>
@@ -66,6 +59,13 @@
         <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selected" %></p>
         <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p>
         <p><strong>Garden's question:</strong> <%= question || "Not selected" %></p>
+    <% } else if (page === "wait_result") { %>
+        <div class="full-screen-container flower1" id="wait-result-page">
+            <div class="content-container">
+                <h2>Your flower is growing....</h2>
+                <h3>Please wait for a few seconds and you’ll see it on the public screen</h3>
+            </div>
+        </div>
     <% } %>
 
     <script src="/socket.io/socket.io.js"></script>

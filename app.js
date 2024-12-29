@@ -49,7 +49,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Default route renders the main page
 app.get("/", (req, res) => {
     // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
-    res.render("render_page", { sessionId: null, page: "bottom3", characteristics, waitingQueue, top3: null });
+    res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingQueue, top3: null });
 });
 
 // Render page for all steps
