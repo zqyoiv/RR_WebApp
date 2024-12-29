@@ -20,32 +20,36 @@
             </div>
         </div>
     <% } else if (page === "top3") { %>
-        <!-- <h1>Select Your Top 3 Personalities</h1>
-        <form id="top3Form">
-            <% for (let characteristic of characteristics) { %>
-                <input type="checkbox" name="top3" value="<%= characteristic %>" /> <%= characteristic %><br />
-            <% } %>
-            <button type="submit">Next</button>
-        </form> -->
         <div class="full-screen-container" id="top3-page">
-        <div class="content-container">
-            <h2>How Would You Describe Yourself In 3 Words?</h2>
-            <form class="input-grid" id="top3Form">
-                <% for (let characteristic of characteristics) { %>
-                    <input class="option-input" type="button" name="top3" value="<%= characteristic %>" />
-                <% } %>
-                <button id="submit-button" type="submit">Continue</button>
-            </form>
+            <div class="content-container">
+                <h2>How Would You Describe Yourself In 3 Words?</h2>
+                <form class="input-grid" id="top3Form">
+                    <% for (let characteristic of characteristics) { %>
+                        <input class="option-input" type="button" name="top3" value="<%= characteristic %>" />
+                    <% } %>
+                    <button id="submit-button" type="submit">Continue</button>
+                </form>
+            </div>
         </div>
-    </div>
     <% } else if (page === "bottom3") { %>
-        <h1>Select Your Bottom 3 Personalities</h1>
+        <!-- <h1>Select Your Bottom 3 Personalities</h1>
         <form id="bottom3Form">
             <% for (let characteristic of characteristics) { %>
                 <input type="checkbox" name="bottom3" value="<%= characteristic %>" /> <%= characteristic %><br />
             <% } %>
             <button type="submit">Next</button>
-        </form>
+        </form> -->
+        <div class="full-screen-container" id="bottom3-page">
+            <div class="content-container">
+                <h2>What 3 words you would never describe yourself?</h2>
+                <form class="input-grid" id="bottom3Form">
+                    <% for (let characteristic of characteristics) { %>
+                        <input class="option-input" type="button" name="bottom3" value="<%= characteristic %>" />
+                    <% } %>
+                    <button id="submit-button" type="submit">Continue</button>
+                </form>
+            </div>
+        </div>
     <% } else if (page === "please_wait") { %>
         <h1>Please Wait</h1>
         <p>The processing queue is full. You are in the waiting queue.</p>
@@ -98,16 +102,18 @@
         <% } else if (page === "bottom3") { %>
             const urlParams = new URLSearchParams(window.location.search);
             const top3String = urlParams.get("top3");
-            const top3Array = top3String.split(",");
-            top3Array.forEach(topValue => {
-                document.querySelector(`input[name="bottom3"][value="${topValue}"]`).disabled = true;
-            });
+            if (top3String && top3String.indexOf(",") > -1) {
+                const top3Array = top3String.split(",");
+                top3Array.forEach(topValue => {
+                    document.querySelector(`input[name="bottom3"][value="${topValue}"]`).disabled = true;
+                });
+            }
             document.querySelectorAll('input[name="bottom3"]').forEach(input => {
-                input.addEventListener("change", handleBottom3Selection);
+                input.addEventListener("click", handleBottom3Selection);
             });
             document.getElementById("bottom3Form").addEventListener("submit", (event) => {
                 event.preventDefault();
-                const selected = Array.from(document.querySelectorAll('input[name="bottom3"]:checked')).map(input => input.value);
+                const selected = Array.from(document.querySelectorAll('input[name="bottom3"].selected')).map(input => input.value);
                 if (selected.length === 3) {
                     socket.emit("submit-bottom3", { sessionId, bottom3: selected });
                 } else {

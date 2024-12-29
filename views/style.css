@@ -100,10 +100,11 @@ button#submit-button.active {
 
 /** 
  * ==================================================
- * ================= Top3 Page ======================
+ * ============== Top3 / Bottom3 Page ===============
  * ================================================== 
  */
-.full-screen-container#top3-page {
+.full-screen-container#top3-page,
+.full-screen-container#bottom3-page {
     .content-container h2 {
         color: #fff;
         font-size: 1.5rem;
