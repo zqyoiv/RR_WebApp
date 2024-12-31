@@ -27,7 +27,7 @@ server.listen(3000, () => {
 const oscClient = new OSC.Client('127.0.0.1', 7000);
 
 const DEBUG_MODE = false; // Don't call GPT in DEBUG Mode.
-const MAX_PROCESSING = 2; // Max number of players in processing mode.
+const MAX_PROCESSING = 5; // Max number of players in processing mode.
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
 let sessions = {}; // Store user data by session ID
 let timers = {}; // Store timers for each session
