@@ -60,6 +60,7 @@ app.get("/reset", (req, res) => {
     waitingQueue = [];
     processingQueue = [];
     flowerCount = 0;
+
     res.redirect('/');
 });
 
@@ -96,7 +97,7 @@ function testRender(res, index) {
             sendResultToUEViaOSC(testPlayerName, testQuestion, testTop3, testBottom3);
             res.render("render_page", { sessionId: "123", page:"result", playerName: testPlayerName, 
                 top3: testTop3, bottom3: testBottom3, 
-                question: testQuestion });
+                question: testQuestion, flowerType: 'flower1' });
             break;
         case 5: // queue
             res.render("render_page", { sessionId: null, page: "please_wait", waitingQueue, top3: null });  
@@ -125,7 +126,8 @@ app.get("/render_result", (req, res) => {
     const top3 = req.query.top3;
     const bottom3 = req.query.bottom3;
     const question = req.query.question;
-    res.render("render_page", { sessionId, page, playerName, top3, bottom3, question });
+    const flowerType = req.query.flowerType;
+    res.render("render_page", { sessionId, page, playerName, top3, bottom3, question, flowerType });
 });
 
 // Error page route
@@ -205,15 +207,16 @@ io.on("connection", (socket) => {
 
         if (DEBUG_MODE) {
             const question = "debug mode placeholder question to save $$";
+            const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
             io.to(socket.id).emit("render_result", {
                 page: "result",
                 sessionId,
                 playerName,
                 top3,
                 bottom3,
-                question
+                question,
+                flowerType
             });
-            sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
             removeFromProcessingQueue(sessionId);
         } else { // Production mode.
             // Call generateInsightfulQuestion with a callback
@@ -222,19 +225,20 @@ io.on("connection", (socket) => {
                     socket.emit("error", { message: "Failed to generate question. Please try again later." });
                     return;
                 }
-
+                const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
                 io.to(socket.id).emit("render_result", {
                     page: "result",
                     sessionId,
                     playerName,
                     top3,
                     bottom3,
-                    question
+                    question,
+                    flowerType
                 });
-                sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
                 removeFromProcessingQueue(sessionId);
             });
         }
+
     });
 
     socket.on("error", (data) => {
@@ -417,4 +421,5 @@ function sendResultToUEViaOSC(playerName, question, top3, bottom3) {
         }, 3000);
     }
     flowerCount += 1;
+    return flowerType;
 };

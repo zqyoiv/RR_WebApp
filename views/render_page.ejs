@@ -71,13 +71,20 @@
             </div>
         </div>
     <% } else if (page === "result") { %>
-        <div class="full-screen-container flower1" id="result-page">
+        <div class="full-screen-container <%= flowerType %>" id="wait-result-page">
             <div class="content-container">
-                <h1>Result</h1>
+                <h2>Your flower is growing....<%= flowerType %></h2>
+                <h3>Please wait for a few seconds and you’ll see it on the public screen</h3>
+            </div>
+        </div>
+        <div class="full-screen-container <%= flowerType %> hidden" id="result-page">
+            <div class="content-container">
+                <!-- <h1>Result</h1>
                 <p><strong>Name:</strong> <%= playerName || "Unknown" %></p>
                 <p><strong>Session ID:</strong> <%= sessionId %></p>
                 <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selectved" %></p>
-                <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p>
+                <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p> -->
+
                 <h3><%= question || "Not selected" %></h3>
                 <a target="_blank" href="https://risingriverofficial.com">
                     <button id="redirect-to-rr" type="redirect">Learn More About Rising River VR</button>
@@ -164,10 +171,23 @@
         });
 
         socket.on("render_result", (data) => {
-            const { page, sessionId,  playerName, top3, bottom3, question } = data;
+            const { page, sessionId,  playerName, top3, bottom3, question, flowerType } = data;
+            let flowerClassString = 'flower1';
+            switch (flowerType) {
+                case 'A':
+                    flowerClassString = 'flower1';
+                    break;
+                case 'B':
+                    flowerClassString = 'flower2';
+                    break;
+                case 'C':
+                    flowerClassString = 'flower3';
+                    break;
+            }
+            console.log("flower type:" + flowerClassString);
             window.location.href = `
                 /render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}
-                &top3=${top3}&bottom3=${bottom3}&question=${question}
+                &top3=${top3}&bottom3=${bottom3}&question=${question}&flowerType=${flowerClassString}
             `;
         });
 

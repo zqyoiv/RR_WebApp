@@ -32,4 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    /** 
+     * =================================================
+     * ================= Result Page ===================
+     * ================================================= 
+     */
+    if (document.getElementById('result-page') != null) {
+        setTimeout(() => {
+            document.getElementById("result-page").classList.remove("hidden");
+            document.getElementById("wait-result-page").classList.add("hidden");
+        }, 5000);
+    }
 });
