@@ -282,6 +282,16 @@ a#learn-more-button {
  * ================================================== 
  */
  .full-screen-container#result-page.flower1 {
+    background-image: url("assets/result/flower1_bg.png");
+    opacity: 0.7;
+}
+
+.full-screen-container#result-page.flower2 {
+    background-image: url("assets/result/flower2_bg.png");
+    opacity: 0.7;
+}
+
+.full-screen-container#result-page.flower3 {
     background-image: url("assets/result/flower3_bg.png");
     opacity: 0.7;
 }

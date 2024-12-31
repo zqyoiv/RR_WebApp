@@ -26,7 +26,7 @@ server.listen(3000, () => {
 // Called when GPT result is back.
 const oscClient = new OSC.Client('127.0.0.1', 7000);
 
-const DEBUG_MODE = false; // Don't call GPT in DEBUG Mode.
+const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
 const MAX_PROCESSING = 5; // Max number of players in processing mode.
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
 let sessions = {}; // Store user data by session ID
@@ -94,10 +94,12 @@ function testRender(res, index) {
             const testQuestion = "Are you afraid that opening up to others might make you lose \
                           the freedom that keeps you feeling safe?";
             const testPlayerName = "test-vio";
-            sendResultToUEViaOSC(testPlayerName, testQuestion, testTop3, testBottom3);
+            const flowerTypeABC = sendResultToUEViaOSC(testPlayerName, testQuestion, testTop3, testBottom3);
+            const flowerMap = { A: 'flower1', B: 'flower2', C: 'flower3'};
+            const flowerType = flowerMap[flowerTypeABC];
             res.render("render_page", { sessionId: "123", page:"result", playerName: testPlayerName, 
                 top3: testTop3, bottom3: testBottom3, 
-                question: testQuestion, flowerType: 'flower1' });
+                question: testQuestion, flowerType: flowerType });
             break;
         case 5: // queue
             res.render("render_page", { sessionId: null, page: "please_wait", waitingQueue, top3: null });  

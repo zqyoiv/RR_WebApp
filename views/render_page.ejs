@@ -73,7 +73,7 @@
     <% } else if (page === "result") { %>
         <div class="full-screen-container <%= flowerType %>" id="wait-result-page">
             <div class="content-container">
-                <h2>Your flower is growing....<%= flowerType %></h2>
+                <h2>Your flower is growing....</h2>
                 <h3>Please wait for a few seconds and you’ll see it on the public screen</h3>
             </div>
         </div>
@@ -173,17 +173,8 @@
         socket.on("render_result", (data) => {
             const { page, sessionId,  playerName, top3, bottom3, question, flowerType } = data;
             let flowerClassString = 'flower1';
-            switch (flowerType) {
-                case 'A':
-                    flowerClassString = 'flower1';
-                    break;
-                case 'B':
-                    flowerClassString = 'flower2';
-                    break;
-                case 'C':
-                    flowerClassString = 'flower3';
-                    break;
-            }
+            const flowerMap = { A: 'flower1', B: 'flower2', C: 'flower3'};
+            flowerClassString = flowerMap[flowerType];
             console.log("flower type:" + flowerClassString);
             window.location.href = `
                 /render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}
