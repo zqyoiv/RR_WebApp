@@ -1,3 +1,14 @@
+document.addEventListener('touchmove', function(event) {
+    event.preventDefault();
+}, { passive: false });
+
+function adjustViewport() {
+    const appElement = document.getElementById('app');
+    appElement.style.height = `${window.innerHeight}px`;
+}
+window.addEventListener('resize', adjustViewport);
+
+
 document.addEventListener('DOMContentLoaded', () => {
 
     /** 
@@ -5,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * ================= Name Page ======================
      * ================================================== 
      */
-    if (document.getElementsByClassName('name-page').length > 0) {
+    if (document.getElementById('name-page') != null) {
         const inputField = document.getElementById('name-input');
         const submitButton = document.getElementById('submit-button');
 

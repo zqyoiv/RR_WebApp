@@ -3,11 +3,25 @@
 <head>
     <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>Rising River Bar Experience</title>
 </head>
 <body style="margin:0px;">
-    <% if (page === "name_page") { %>
+    <% if (page === "home_page") { %>
+        <div class="full-screen-container" id="home-page">
+            <div class="content-container">
+                <img class="rr-logo" src="assets/RR_logo.gif"/>
+                <p>Enter the experience to interact with the digital garden.</p>
+                <p>Rising River is originally an AI-powered theraputic VR experience. <br>
+                    <a target="blank" href="https://risingriverofficial.com">Learn More</a>.</p>
+                <div>
+                    <button id="enter-button" type="enter">Enter</button>
+                    <a id="learn-more-button"  target="blank" href="https://risingriverofficial.com">About Rising River</a>
+                </div>
+            </div>
+        </div>
+    <% } else if (page === "name_page") { %>
         <div class="full-screen-container" id="name-page">
             <div class="content-container">
                 <h2>Enter Your Name</h2>
@@ -62,10 +76,12 @@
                 <h1>Result</h1>
                 <p><strong>Name:</strong> <%= playerName || "Unknown" %></p>
                 <p><strong>Session ID:</strong> <%= sessionId %></p>
-                <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selected" %></p>
+                <p><strong>Top 3 Personalities:</strong> <%= top3 || "Not selectved" %></p>
                 <p><strong>Bottom 3 Personalities:</strong> <%= bottom3 || "Not selected" %></p>
                 <h3><%= question || "Not selected" %></h3>
-                <button id="submit-button" type="submit">Save To Album</button>
+                <a target="_blank" href="https://risingriverofficial.com">
+                    <button id="redirect-to-rr" type="redirect">Learn More About Rising River VR</button>
+                </a>
             </div>
         </div>
     <% } else if (page === "wait_result") { %>
@@ -89,7 +105,12 @@
             console.log(`Assigned session ID: ${sessionId}`);
         });
 
-        <% if (page === "name_page") { %>
+        <% if (page === "home_page") { %>
+            document.getElementById("enter-button").addEventListener("click", (event) => {
+                event.preventDefault();
+                window.location.href = `\enter`;
+            });
+        <% } else if (page === "name_page") { %>
             document.getElementById("nameForm").addEventListener("submit", (event) => {
                 event.preventDefault();
                 const name = document.getElementById("name-input").value;
@@ -115,6 +136,7 @@
                 const top3Array = top3String.split(",");
                 top3Array.forEach(topValue => {
                     document.querySelector(`input[name="bottom3"][value="${topValue}"]`).disabled = true;
+                    document.querySelector(`input[name="bottom3"][value="${topValue}"]`).classList.add('inactive');
                 });
             }
             document.querySelectorAll('input[name="bottom3"]').forEach(input => {

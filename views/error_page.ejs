@@ -10,7 +10,7 @@
     <div class="full-screen-container" id="error-page">
         <div class="content-container">
             <h1>Error</h1>
-            <p><%= message %></p>
+            <h3><%= message %></h3>
             <p>You will be redirected to the start page in <span id="countdown"><%= redirectTimeout %></span> seconds.</p>
         </div>
     </div>
@@ -24,7 +24,7 @@
 
             if (remainingTime <= 0) {
                 clearInterval(countdownInterval);
-                window.location.href = "/";
+                window.location.href = "/enter";
             }
         }, 1000);
     </script>

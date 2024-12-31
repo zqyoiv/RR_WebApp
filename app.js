@@ -15,24 +15,25 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// --------------- Start Server  ---------------------
+server.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
+});
+
 // ------------------- OSC --------------------------
 // Create a new OSC client to send messages
 // Specify the server's IP address and the port number
 // Called when GPT result is back.
 const oscClient = new OSC.Client('127.0.0.1', 7000);
 
-// --------------- Start Server  ---------------------
-server.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-});
-
 const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
 const MAX_PROCESSING = 2; // Max number of players in processing mode.
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
+let sessions = {}; // Store user data by session ID
+let timers = {}; // Store timers for each session
 let processingQueue = [];
 let waitingQueue = [];
-const sessions = {}; // Store user data by session ID
-const timers = {}; // Store timers for each session
+let flowerCount = 0;
 
 const characteristics = [
     "creativity", "curiosity", "judgement", "learning", "perspective", "bravery",
@@ -48,9 +49,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Default route renders the main page
 app.get("/", (req, res) => {
-    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+    res.render("render_page", { sessionId: null, page: "home_page", characteristics, waitingQueue });
+    // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
 });
 
+// Restart server in case anything wierd happened
+app.get("/reset", (req, res) => {
+    sessions = {};
+    timers = {};
+    waitingQueue = [];
+    processingQueue = [];
+    flowerCount = 0;
+    res.redirect('/');
+});
+
+app.get("/enter", (req, res) => {
+    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+});
 
 // type: localhost:3000/test?index=1
 app.get("/test", (req, res) => {
@@ -59,6 +74,8 @@ app.get("/test", (req, res) => {
 });
 
 function testRender(res, index) {
+    const testTop3 =  "curiosity,creativity,humor";
+    const testBottom3 = "leadership,forgiveness,fairness";
     switch (index) {
         case 0:
             res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
@@ -73,10 +90,13 @@ function testRender(res, index) {
             res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingQueue, top3: null });
             break;
         case 4: // result
-            res.render("render_page", { sessionId: "123", page:"result", playerName: "vio", 
-                top3: "curiosity,creativity,humor", bottom3: "leadership,forgiveness,fairness", 
-                question:"Are you afraid that opening up to others might make you lose \
-                          the freedom that keeps you feeling safe?" });
+            const testQuestion = "Are you afraid that opening up to others might make you lose \
+                          the freedom that keeps you feeling safe?";
+            const testPlayerName = "test-vio";
+            sendResultToUEViaOSC(testPlayerName, testQuestion, testTop3, testBottom3);
+            res.render("render_page", { sessionId: "123", page:"result", playerName: testPlayerName, 
+                top3: testTop3, bottom3: testBottom3, 
+                question: testQuestion });
             break;
         case 5: // queue
             res.render("render_page", { sessionId: null, page: "please_wait", waitingQueue, top3: null });  
@@ -120,11 +140,11 @@ app.get("/error", (req, res) => {
 io.on("connection", (socket) => {
     // Check origin to ban un-authorized access.
     const origin = socket.handshake.headers.referer;
-    if (!origin.includes("localhost:3000")) {
-        console.log(`Connection from unauthorized origin: ${origin}`);
-        socket.disconnect();
-        return;
-    }
+    // if (!origin.includes("localhost:3000")) {
+    //     console.log(`Connection from unauthorized origin: ${origin}`);
+    //     socket.disconnect();
+    //     return;
+    // }
 
     // Check for existing sessionId in the URL
     const referer = socket.handshake.headers.referer;
@@ -193,7 +213,7 @@ io.on("connection", (socket) => {
                 bottom3,
                 question
             });
-            // sendResultToUEViaOSC(playerName, question);
+            sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
             removeFromProcessingQueue(sessionId);
         } else { // Production mode.
             // Call generateInsightfulQuestion with a callback
@@ -211,7 +231,7 @@ io.on("connection", (socket) => {
                     bottom3,
                     question
                 });
-                sendResultToUEViaOSC(playerName, question);
+                sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
                 removeFromProcessingQueue(sessionId);
             });
         }
@@ -336,14 +356,65 @@ async function generateInsightfulQuestion(top3, bottom3, callback) {
 
 // ------------------- OSC --------------------------
 
-function sendResultToUEViaOSC(playerName, question) {
-  // Send gpt responded question + player Name to UE via OSC
-  const message = new OSC.Message('/player-name', playerName, '/question', question);
-  oscClient.send(message, (error) => {
-      if (error) {
-          console.error('Error sending OSC message:', error);
-          return res.status(500).send('Failed to send OSC message');
-      }
-      res.send('OSC message sent successfully');
-  });
+function sendResultToUEViaOSC(playerName, question, top3, bottom3) {
+    const top3array = top3.split(",");
+    const bottom3array = bottom3.split(",");
+    const flowerTypeArray = ["A", "B", "C"];
+    
+    const flowerIndex = flowerCount % 3; // 3 is number type of flower in total.
+    const flowerType = flowerTypeArray[flowerIndex];
+    let flowerRound = Math.floor(flowerCount / 3);
+
+    let shouldRestart = false;
+    // If flower reaches 6, restart the game
+    if (flowerCount >= 6) {
+        flowerCount = 0;
+        flowerRound = Math.floor(flowerCount / 3);
+        shouldRestart = true;
+    }
+
+    // Send gpt responded question + player name to UE via OSC
+    const message = new OSC.Message(
+        '/player-name', playerName, 
+        '/question', question,
+        '/top3-0', top3array[0],
+        '/top3-1', top3array[1],
+        '/top3-2', top3array[2],
+        '/bottom3-0', bottom3array[0],
+        '/bottom3-1', bottom3array[0],
+        '/bottom3-2', bottom3array[0],
+        '/flower-type', flowerType,
+        '/restart', shouldRestart,
+        '/round', flowerRound
+    );
+    console.log('flower round: ' + flowerRound);
+    oscClient.send(message, (error) => {
+        if (error) {
+            console.error('Error sending OSC message:', error);
+        }
+    });
+    // Send the first flower OSC again to avoid UE level restart bug.
+    if (shouldRestart) {
+        const message2 = new OSC.Message(
+            '/player-name', playerName, 
+            '/question', question,
+            '/top3-0', top3array[0],
+            '/top3-1', top3array[1],
+            '/top3-2', top3array[2],
+            '/bottom3-0', bottom3array[0],
+            '/bottom3-1', bottom3array[0],
+            '/bottom3-2', bottom3array[0],
+            '/flower-type', flowerType,
+            '/restart', false,
+            '/round', flowerRound
+        );
+        setTimeout(() => {
+            oscClient.send(message2, (error) => {
+                if (error) {
+                    console.error('Error sending OSC message:', error);
+                }
+            });
+        }, 3000);
+    }
+    flowerCount += 1;
 };
