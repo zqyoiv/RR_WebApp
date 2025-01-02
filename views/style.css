@@ -28,7 +28,7 @@ body, html, button, input {
 /* Full-screen container */
 .full-screen-container {
     width: 100vw;
-    height: 100vh;
+    height: 80vh; /* because on mobile phone, 100vh makes the center a bit off. */
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -192,7 +192,7 @@ a#learn-more-button {
 
     .input-grid {
         display: grid;
-        height: calc(100vh - 12rem);
+        height: calc(85vh - 12rem);
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem 1rem;
         overflow-y: auto;
@@ -200,7 +200,7 @@ a#learn-more-button {
     
     /* Option inputs */
     .option-input {
-        height: calc((100vh - 12rem - (11 * 0.75rem)) / 12);
+        height: calc((85vh - 12rem - (11 * 0.75rem)) / 12);
         padding: 0.5rem;
         border: 1px solid #fff;
         border-radius: 12px;

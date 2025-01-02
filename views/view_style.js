@@ -11,6 +11,11 @@ window.addEventListener('resize', adjustViewport);
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Remove default double click causing zoom in.
+    document.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+      }, { passive: false });
+
     /** 
      * =================================================
      * ================= Name Page ======================
