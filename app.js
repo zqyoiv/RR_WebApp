@@ -33,6 +33,7 @@ let sessions = {}; // Store user data by session ID
 let timers = {}; // Store timers for each session
 let processingQueue = [];
 let waitingQueue = [];
+let waitingNameQueue = [];
 let flowerCount = 0;
 
 const characteristics = [
@@ -49,8 +50,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Default route renders the main page
 app.get("/", (req, res) => {
-    res.render("render_page", { sessionId: null, page: "home_page", characteristics, waitingQueue });
-    // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+    res.render("render_page", { sessionId: null, page: "home_page", characteristics, waitingNameQueue });
+    // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingNameQueue });
 });
 
 // Restart server in case anything wierd happened
@@ -58,6 +59,7 @@ app.get("/reset", (req, res) => {
     sessions = {};
     timers = {};
     waitingQueue = [];
+    waitingNameQueue = [];
     processingQueue = [];
     flowerCount = 0;
 
@@ -65,7 +67,7 @@ app.get("/reset", (req, res) => {
 });
 
 app.get("/enter", (req, res) => {
-    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+    res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingNameQueue });
 });
 
 // type: localhost:3000/test?index=1
@@ -79,16 +81,16 @@ function testRender(res, index) {
     const testBottom3 = "leadership,forgiveness,fairness";
     switch (index) {
         case 0:
-            res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingQueue });
+            res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingNameQueue });
             break;
         case 1: // top3
-            res.render("render_page", { sessionId: null, page: "top3", characteristics, waitingQueue });
+            res.render("render_page", { sessionId: null, page: "top3", characteristics, waitingNameQueue });
             break;
         case 2: // bottom3
-            res.render("render_page", { sessionId: null, page: "bottom3", characteristics, waitingQueue });
+            res.render("render_page", { sessionId: null, page: "bottom3", characteristics, waitingNameQueue });
             break;
         case 3: // wait result
-            res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingQueue, top3: null });
+            res.render("render_page", { sessionId: null, page: "wait_result", characteristics, waitingNameQueue, top3: null });
             break;
         case 4: // result
             const testQuestion = "Are you afraid that opening up to others might make you lose \
@@ -102,7 +104,8 @@ function testRender(res, index) {
                 question: testQuestion, flowerType: flowerType });
             break;
         case 5: // queue
-            res.render("render_page", { sessionId: null, page: "please_wait", waitingQueue, top3: null });  
+            waitingNameQueue = ["Vio", "Lois", "John", "Lilian"];
+            res.render("render_page", { sessionId: null, page: "please_wait", waitingNameQueue, top3: null });  
             break;
         case 6: // error
             res.render("error_page", { 
@@ -118,7 +121,7 @@ app.get("/render_page", (req, res) => {
     const sessionId = req.query.sessionId || null;
     const page = req.query.page || "name_page";
     const top3 = req.query.top3 || null;
-    res.render("render_page", { sessionId, page, characteristics, waitingQueue, top3 });
+    res.render("render_page", { sessionId, page, characteristics, waitingNameQueue, top3 });
 });
 
 app.get("/render_result", (req, res) => {
@@ -172,7 +175,7 @@ io.on("connection", (socket) => {
             console.error(`Invalid sessionId: ${sessionId}`);
             return;
         }
-        socket.emit("render", { page, sessionId, waitingQueue, characteristics });
+        socket.emit("render", { page, sessionId, waitingNameQueue, characteristics });
     });
 
     socket.on("submit-name", (data) => {
@@ -182,7 +185,7 @@ io.on("connection", (socket) => {
             return;
         }
         sessions[sessionId].name = name;
-        addToQueue(sessionId, socket);
+        addToQueue(sessionId, socket, name);
     });
 
     socket.on("submit-top3", (data) => {
@@ -259,15 +262,16 @@ io.on("connection", (socket) => {
     });
 
     // Utility: Add session to the appropriate queue
-    function addToQueue(sessionId, socket) {
+    function addToQueue(sessionId, socket, name) {
         if (processingQueue.length < MAX_PROCESSING) {
             processingQueue.push(sessionId);
             startTimer(sessionId, socket); // Start the ACTIVE_TIMER
             socket.emit("render", { page: "top3", sessionId, characteristics: [] });
         } else {
             waitingQueue.push(sessionId);
+            waitingNameQueue.push(name);
             updateWaitingQueue();
-            socket.emit("render", { page: "please_wait", sessionId, waitingQueue });
+            socket.emit("render", { page: "please_wait", sessionId, waitingNameQueue });
         }
         console.log("Processing queue:  " + processingQueue);
         console.log("Waiting queue:  " + waitingQueue);
@@ -286,6 +290,7 @@ io.on("connection", (socket) => {
     function promoteWaitingUser() {
         if (processingQueue.length < MAX_PROCESSING && waitingQueue.length > 0) {
             const nextSessionId = waitingQueue.shift();
+            waitingNameQueue.shift();
             processingQueue.push(nextSessionId);
             const nextSocketId = sessions[nextSessionId].socketId;
             io.to(nextSocketId).emit("render", { page: "top3", sessionId: nextSessionId, characteristics:[] });

@@ -47,6 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             document.getElementById("result-page").classList.remove("hidden");
             document.getElementById("wait-result-page").classList.add("hidden");
-        }, 5000);
+        }, 5000); // Display the wait for result page for 5 seconds.
     }
 });
