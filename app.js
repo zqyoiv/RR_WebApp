@@ -121,6 +121,9 @@ function testRender(res, index) {
                 redirectTimeout: 30 // Timeout in seconds to redirect to the start page
             });
             break;
+        case 7: // please visit later page
+            res.render("visit_later_page", {});
+            break;
     }
 }
 
@@ -165,7 +168,9 @@ io.on("connection", (socket) => {
     const referer = socket.handshake.headers.referer;
     const url = new URL(referer);
     const sessionId = url.searchParams.get("sessionId") || uuidv4();
-    console.log(`session id: ${sessionId}`);
+    if (DEBUG_MODE) {
+        console.log(`session id: ${sessionId}`);
+    }
 
     // If sessionId exists, update it; otherwise, create a new session
     if (!sessions[sessionId]) {
@@ -262,10 +267,8 @@ io.on("connection", (socket) => {
     // Disconnect cleanup
     socket.on("disconnect", (data) => {
         const { sessionId } = data;
-        // console.log("socket disconnect data: " + data);
         if (data.includes("transport close")) { 
             removeFromProcessingQueue(sessionId);
-            // console.log("socket disconnect, removed session id: " + sessionId);
         }
     });
 
@@ -281,8 +284,10 @@ io.on("connection", (socket) => {
             updateWaitingQueue();
             socket.emit("render", { page: "please_wait", sessionId, waitingNameQueue });
         }
-        console.log("Processing queue:  " + processingQueue);
-        console.log("Waiting queue:  " + waitingQueue);
+        if (DEBUG_MODE) {
+            console.log("Processing queue:  " + processingQueue);
+            console.log("Waiting queue:  " + waitingQueue);
+        }
     }
 
     // Utility: Remove session from the queue, remove user data and timer.
@@ -321,7 +326,9 @@ io.on("connection", (socket) => {
             // SessionT timeout: Redirect to starter page and remove all stored user data and 
             // proceed to the next waiting user.
             if (socket) {
-                console.log("...session time out, redirect to start page: " + sessionId);
+                if (DEBUG_MODE) {
+                    console.log("...session time out, redirect to start page: " + sessionId);
+                }
                 const socketId = sessions[sessionId].socketId;
                 io.to(socketId).emit("render", { page: "name_page", sessionId, characteristics: [] });
             }
@@ -335,7 +342,9 @@ io.on("connection", (socket) => {
             clearTimeout(timers[sessionId]);
             delete timers[sessionId];
         }
-        console.log("...timer is cleared for session id:" + sessionId);
+        if (DEBUG_MODE) {
+            console.log("...timer is cleared for session id:" + sessionId);
+        }
     }
 
     function resetTimer(sessionId) {
@@ -406,7 +415,6 @@ function sendResultToUEViaOSC(playerName, question, top3, bottom3) {
         '/restart', shouldRestart,
         '/round', flowerRound
     );
-    console.log('flower round: ' + flowerRound);
     oscClient.send(message, (error) => {
         if (error) {
             console.error('Error sending OSC message:', error);
