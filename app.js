@@ -59,7 +59,7 @@ app.get("/", (req, res) => {
     }
 });
 
-// Restart server in case anything wierd happened
+// Restart server in case anything wierd happened.
 app.get("/reset", (req, res) => {
     sessions = {};
     timers = {};
@@ -81,6 +81,7 @@ app.get("/test", (req, res) => {
     testRender(res, index);
 });
 
+// Test function.
 function testRender(res, index) {
     const testTop3 =  "curiosity,creativity,humor";
     const testBottom3 = "leadership,forgiveness,fairness";
