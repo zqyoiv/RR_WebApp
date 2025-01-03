@@ -160,8 +160,8 @@
             });
         <% } else if (page === "please_wait") { %>
             socket.on("update-waiting-queue", (data) => {
-                const waitingQueue = document.getElementById("waitingQueue");
-                waitingQueue.innerHTML = data.waitingQueue.map(id => `<li>${id}</li>`).join("");
+                const waitingNameQueue = document.getElementById("waitingNameQueue");
+                waitingNameQueue.innerHTML = data.waitingNameQueue.map(id => `<li>${id}</li>`).join("");
             });
         <% } %>
 
