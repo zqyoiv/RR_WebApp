@@ -69,6 +69,8 @@ app.get("/reset", (req, res) => {
     flowerCount = 0;
 
     res.redirect('/');
+    // Also clean up the unreal garden space.
+    restartOSC();
 });
 
 app.get("/enter", (req, res) => {
@@ -435,4 +437,25 @@ function sendResultToUEViaOSC(playerName, question, top3, bottom3) {
     }
     flowerCount += 1;
     return flowerType;
+};
+
+function restartOSC() {
+        const message = new OSC.Message(
+            '/player-name', "", 
+            '/question', "",
+            '/top3-0', "",
+            '/top3-1', "",
+            '/top3-2', "",
+            '/bottom3-0', "",
+            '/bottom3-1', "",
+            '/bottom3-2', "",
+            '/flower-type', "",
+            '/restart', true,
+            '/round', 0,
+        );
+        oscClient.send(message, (error) => {
+            if (error) {
+                console.error('Error sending OSC message:', error);
+            }
+        });
 };
