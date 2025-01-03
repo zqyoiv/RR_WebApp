@@ -40,6 +40,7 @@ body, html, button, input {
 
 .full-screen-container#result-page,
 .full-screen-container#error-page,
+.full-screen-container#visit-later-page,
 .full-screen-container#please-wait,
 .full-screen-container#home-page,
 .full-screen-container#name-page {
@@ -48,6 +49,7 @@ body, html, button, input {
 }
 
 .full-screen-container#error-page,
+.full-screen-container#visit-later-page,
 .full-screen-container#please-wait {
     .content-container {
         text-align: center;

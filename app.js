@@ -27,7 +27,8 @@ server.listen(3000, () => {
 const oscClient = new OSC.Client('127.0.0.1', 7000);
 
 const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
-const MAX_PROCESSING = 2; // Max number of players in processing mode.
+const MAX_PROCESSING = 5; // Max number of players in processing mode.
+const MAX_WAITING = 5;
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
 let sessions = {}; // Store user data by session ID
 let timers = {}; // Store timers for each session
@@ -50,8 +51,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Default route renders the main page
 app.get("/", (req, res) => {
-    res.render("render_page", { sessionId: null, page: "home_page", characteristics, waitingNameQueue });
-    // res.render("render_page", { sessionId: null, page: "name_page", characteristics, waitingNameQueue });
+    if (waitingNameQueue.length >= MAX_WAITING) {
+        res.render("visit_later_page", {});
+    } else {
+        res.render("render_page", { sessionId: null, 
+                                    page: "home_page", characteristics, waitingNameQueue });
+    }
 });
 
 // Restart server in case anything wierd happened
