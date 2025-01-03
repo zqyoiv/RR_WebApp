@@ -30,6 +30,8 @@ const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
 const MAX_PROCESSING = 5; // Max number of players in processing mode.
 const MAX_WAITING = 5;
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
+const GUEST_STR = "Waiting Guest #";
+
 let sessions = {}; // Store user data by session ID
 let timers = {}; // Store timers for each session
 let processingQueue = [];
@@ -112,7 +114,7 @@ function testRender(res, index) {
                 question: testQuestion, flowerType: flowerType });
             break;
         case 5: // queue
-            waitingNameQueue = ["Vio", "Lois", "John", "Lilian"];
+            waitingNameQueue = ["Waiting Guest #1", "Waiting Guest #2", "Waiting Guest #3"];
             res.render("render_page", { sessionId: null, page: "please_wait", waitingNameQueue, top3: null });  
             break;
         case 6: // error
@@ -280,7 +282,8 @@ io.on("connection", (socket) => {
             socket.emit("render", { page: "top3", sessionId, characteristics: [] });
         } else {
             waitingQueue.push(sessionId);
-            waitingNameQueue.push(name);
+            let guestString = GUEST_STR + waitingNameQueue.length;
+            waitingNameQueue.push(guestString);
             updateWaitingQueue();
             socket.emit("render", { page: "please_wait", sessionId, waitingNameQueue });
         }
