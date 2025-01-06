@@ -26,7 +26,7 @@ server.listen(3000, () => {
 // Called when GPT result is back.
 const oscClient = new OSC.Client('127.0.0.1', 7000);
 
-const DEBUG_MODE = true; // Don't call GPT in DEBUG Mode.
+const DEBUG_MODE = false; // Don't call GPT in DEBUG Mode.
 const MAX_PROCESSING = 5; // Max number of players in processing mode.
 const MAX_WAITING = 5;
 const ACTIVE_TIMER = 1 * 60 * 1000; // 1 minutes, after 1 min no action, current session will be marked timeout and removed.
@@ -224,11 +224,12 @@ io.on("connection", (socket) => {
         let top3 = sessions[sessionId].top3;
 
         sessions[sessionId].bottom3 = bottom3;
+        let flowerType;
 
         if (DEBUG_MODE) {
             const question = "debug mode placeholder question to save $$";
             if (top3 && bottom3) {
-                const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
+                flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
             } else {
                 socket.emit("error", { message: "Failed to generate question. Please try again later." });
                 return;
@@ -254,7 +255,7 @@ io.on("connection", (socket) => {
                     socket.emit("error", { message: "Failed to generate question. Please try again later." });
                     return;
                 }
-                const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
+                flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
                 io.to(socket.id).emit("render_result", {
                     page: "result",
                     sessionId,
