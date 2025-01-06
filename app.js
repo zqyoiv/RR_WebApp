@@ -227,7 +227,12 @@ io.on("connection", (socket) => {
 
         if (DEBUG_MODE) {
             const question = "debug mode placeholder question to save $$";
-            const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
+            if (top3 && bottom3) {
+                const flowerType = sendResultToUEViaOSC(playerName, question, top3.join(","), bottom3.join(","));
+            } else {
+                socket.emit("error", { message: "Failed to generate question. Please try again later." });
+                return;
+            }
             io.to(socket.id).emit("render_result", {
                 page: "result",
                 sessionId,
@@ -239,6 +244,10 @@ io.on("connection", (socket) => {
             });
             removeFromProcessingQueue(sessionId);
         } else { // Production mode.
+            if (!(top3 && bottom3)) {
+                socket.emit("error", { message: "Failed to generate question. Please try again later." });
+                return;
+            }
             // Call generateInsightfulQuestion with a callback
             generateInsightfulQuestion(top3, bottom3, (error, question) => {
                 if (error) {
