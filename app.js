@@ -397,8 +397,8 @@ function sendResultToUEViaOSC(playerName, question, top3, bottom3) {
     let flowerRound = Math.floor(flowerCount / 3);
 
     let shouldRestart = false;
-    // If flower reaches 6, restart the game
-    if (flowerCount >= 6) {
+    // If flower reaches 9, restart the game
+    if (flowerCount >= 9) {
         flowerCount = 0;
         flowerRound = Math.floor(flowerCount / 3);
         shouldRestart = true;
