@@ -134,6 +134,15 @@ app.get("/render_page", (req, res) => {
     const sessionId = req.query.sessionId || null;
     const page = req.query.page || "name_page";
     const top3 = req.query.top3 || null;
+
+    // If session Id is not inside processing queue or waiting queue, redirect to home page.
+    if (sessionId != null && page != "name_page") {
+        if (!processingQueue.includes(sessionId)
+            && !waitingNameQueue.includes(sessionId)) {
+                res.redirect('/');
+                return;
+            }
+    }
     res.render("render_page", { sessionId, page, characteristics, waitingNameQueue, top3 });
 });
 
@@ -152,7 +161,7 @@ app.get("/render_result", (req, res) => {
 app.get("/error", (req, res) => {
     res.render("error_page", { 
         message: req.query.message || "An unexpected error occurred.",
-        redirectTimeout: 30 // Timeout in seconds to redirect to the start page
+        redirectTimeout: 10 // Timeout in seconds to redirect to the start page
     });
 });
 
@@ -371,9 +380,10 @@ io.on("connection", (socket) => {
 
 async function generateInsightfulQuestion(top3, bottom3, callback) {
     const prompt = `
-    Given the top 3 strengths (${top3.join(", ")}) and bottom 3 strengths (${bottom3.join(", ")}) of this person, 
-    can you ask an high level insightful question that can trigger their deep self-reflection? Limit to 10 words.
-    `;
+    based on this VIA 24 character strength and this form, ASK ME A QUESTION WHICH HAS ONLY ONE SENTENCE: my top strength is ${top3.join(", ")}, 
+    bottom strength is ${bottom3.join(", ")}. Analyze the relationship between this person's inner world 
+    and the external world, AND ASK ME A QUESTION WHICH HAS ONLY ONE SENTENCE about my fear and deepest 
+    needs. Make the question Colloquial`;
 
     openai.chat.completions.create({
         model: "gpt-4o-mini",
