@@ -190,6 +190,9 @@
             window.location.href = `/error?message=${encodeURIComponent(message)}`;
         });
 
+        socket.on('redirect', (url) => {
+            window.location.href = `/`; // Perform the redirection
+        });
 
         window.addEventListener("beforeunload", (event) => {
             const isReloadOrNavigation = (performance.navigation.type === performance.navigation.TYPE_RELOAD) ||
