@@ -224,6 +224,14 @@ io.on("connection", (socket) => {
 
     socket.on("submit-bottom3", (data) => {
         const { sessionId, bottom3 } = data;
+        // If session Id is not inside processing queue or waiting queue, redirect to home page.
+        if (sessionId != null) {
+            if (!processingQueue.includes(sessionId)
+                && !waitingNameQueue.includes(sessionId)) {
+                    socket.emit('redirect', '/');
+                    return;
+                }
+        }
         if (!sessions[sessionId]) {
             console.error(`Invalid sessionId: ${sessionId}`);
             return;

@@ -156,6 +156,9 @@
                 } else {
                     alert("Please select exactly 3 personalities.");
                 }
+                // Prevent multiple click.
+                document.getElementById("submit-button").classList.remove('active');
+                document.getElementById("submit-button").disabled = true;
             });
         <% } else if (page === "please_wait") { %>
             socket.on("update-waiting-queue", (data) => {
@@ -174,7 +177,7 @@
             let flowerClassString = 'flower1';
             const flowerMap = { A: 'flower1', B: 'flower2', C: 'flower3'};
             flowerClassString = flowerMap[flowerType];
-            console.log("flower type:" + flowerClassString);
+            // console.log("flower type:" + flowerClassString);
             window.location.href = `
                 /render_result?sessionId=${sessionId}&page=${page}&playerName=${playerName}
                 &top3=${top3}&bottom3=${bottom3}&question=${question}&flowerType=${flowerClassString}
