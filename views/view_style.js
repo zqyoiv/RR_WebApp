@@ -44,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
      * ================================================= 
      */
     if (document.getElementById('result-page') != null) {
+        let flowerWaitStr = "Please wait for a few seconds and you’ll see it on the public screen";
+        if (window.location.href.includes("10.16.0.21")) {
+            flowerWaitStr = "Please wait for a few seconds and you’ll see it on the left screen";
+        } else if (window.location.href.includes("10.16.0.22")) {
+            flowerWaitStr = "Please wait for a few seconds and you’ll see it on the right screen";
+        }
+        const flowerDescriptionEl = document.getElementById('flower-wait-text');
+        flowerDescriptionEl.innerText = flowerWaitStr;
+
         setTimeout(() => {
             document.getElementById("result-page").classList.remove("hidden");
             document.getElementById("wait-result-page").classList.add("hidden");
