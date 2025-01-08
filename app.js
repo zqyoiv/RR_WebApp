@@ -388,7 +388,7 @@ io.on("connection", (socket) => {
 
 async function generateInsightfulQuestion(top3, bottom3, callback) {
     const prompt = `
-    based on this VIA 24 character strength and this form, ASK ME A QUESTION WHICH HAS ONLY ONE SENTENCE: my top strength is ${top3.join(", ")}, 
+    based on this VIA 24 character strength and this form, ASK ME A QUESTION WHICH HAS ONLY ONE SENTENCE within 25 words: my top strength is ${top3.join(", ")}, 
     bottom strength is ${bottom3.join(", ")}. Analyze the relationship between this person's inner world 
     and the external world, AND ASK ME A QUESTION WHICH HAS ONLY ONE SENTENCE about my fear and deepest 
     needs. Make the question Colloquial`;
